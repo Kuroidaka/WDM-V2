@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Bill {
+  id                  String   @id
+  wedding_id          String
+  payment_date        DateTime
+  service_total_price Int
+  total_price         Int
+  deposit_require     Int
+  deposit_amount      Int
+  remain_amount       Int
+  extra_fee           Int
+  created_at          DateTime @default(now())
+  updated_at          DateTime @default(now())
+  Wedding             Wedding  @relation(fields: [wedding_id], references: [id])
+
+  @@index([wedding_id], map: "Bill_wedding_id_fkey")
+}
+
+model Customer {
+  id         String    @id
+  name       String
+  phone      String    @unique
+  created_at DateTime  @default(now())
+  updated_at DateTime  @default(now())
+  Wedding    Wedding[]
+}
+
+model Food {
+  id         String   @id @default(uuid())
+  name       String
+  price      Int
+  status     Boolean  @default(true)
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+  inventory  Int
+}
+
+model FoodOrder {
+  id         String   @id
+  food_id    String
+  food_name  String
+  food_price Int
+  count      Int
+  note       String?
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+  wedding_id String
+  Wedding    Wedding  @relation(fields: [wedding_id], references: [id])
+
+  @@index([wedding_id], map: "FoodOrder_wedding_id_fkey")
+}
+
+model LobType {
+  id              String   @id
+  max_table_count Int
+  min_table_price Int
+  deposit_percent Int      @default(30)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now())
+  type_name       String
+  Lobby           Lobby[]
+}
+
+model Lobby {
+  id          String    @id
+  name        String
+  lob_type_id String
+  LobType     LobType   @relation(fields: [lob_type_id], references: [id])
+  Wedding     Wedding[]
+
+  @@index([lob_type_id], map: "Lobby_lob_type_id_fkey")
+}
+
+model Permission {
+  id             String           @id
+  name           String
+  description    String?
+  page           Permission_page
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @default(now())
+  RolePermission RolePermission[]
+}
+
+model Role {
+  id             String           @id
+  name           String           @unique
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @default(now())
+  RolePermission RolePermission[]
+  UserRole       UserRole[]
+}
+
+model RolePermission {
+  role_id       String
+  permission_id String
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @default(now())
+  Permission    Permission @relation(fields: [permission_id], references: [id])
+  Role          Role       @relation(fields: [role_id], references: [id])
+
+  @@id([role_id, permission_id])
+  @@index([permission_id], map: "RolePermission_permission_id_fkey")
+}
+
+model Service {
+  id         String   @id
+  name       String
+  price      Int
+  status     Boolean
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+}
+
+model ServiceOrder {
+  id            String   @id
+  service_id    String
+  service_name  String
+  service_price Int
+  count         Int
+  created_at    DateTime @default(now())
+  updated_at    DateTime @default(now())
+  wedding_id    String
+  Wedding       Wedding  @relation(fields: [wedding_id], references: [id])
+
+  @@index([wedding_id], map: "ServiceOrder_wedding_id_fkey")
+}
+
+model User {
+  id           String     @id
+  display_name String
+  username     String     @unique
+  password     String
+  created_at   DateTime   @default(now())
+  updated_at   DateTime   @default(now())
+  UserRole     UserRole[]
+}
+
+model UserRole {
+  user_id    String
+  role_id    String
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now())
+  Role       Role     @relation(fields: [role_id], references: [id])
+  User       User     @relation(fields: [user_id], references: [id])
+
+  @@id([user_id, role_id])
+  @@index([role_id], map: "UserRole_role_id_fkey")
+}
+
+model Wedding {
+  id              String         @id
+  groom           String
+  bride           String
+  wedding_date    DateTime
+  shift           Wedding_shift
+  lobby_id        String
+  customer_id     String
+  table_count     Int
+  created_at      DateTime       @default(now())
+  updated_at      DateTime       @default(now())
+  note            String?
+  is_penalty_mode Boolean        @default(true)
+  Bill            Bill[]
+  FoodOrder       FoodOrder[]
+  ServiceOrder    ServiceOrder[]
+  Customer        Customer       @relation(fields: [customer_id], references: [id])
+  Lobby           Lobby          @relation(fields: [lobby_id], references: [id])
+
+  @@index([customer_id], map: "Wedding_Customer_id_fkey")
+  @@index([lobby_id], map: "Wedding_lobby_id_fkey")
+}
+
+enum Permission_page {
+  report
+  user
+  lobby
+  order
+  food_service
+}
+
+enum Wedding_shift {
+  noon
+  evening
+}
