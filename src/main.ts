@@ -1,5 +1,5 @@
 import helmet from 'helmet';
-import { NestFactory } from '@nestjs/core';
+import { HttpAdapterHost, NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { NestExpressApplication } from '@nestjs/platform-express';
@@ -15,10 +15,12 @@ async function bootstrap() {
     bufferLogs: true,
   });
 
-  // const { httpAdapter } = app.get(HttpAdapterHost);
-
-  app.useGlobalFilters( new PrismaClientExceptionFilter(), new HttpExceptionFilter());
-
+  const { httpAdapter } = app.get(HttpAdapterHost);
+  app.useGlobalFilters(
+    new HttpExceptionFilter(),
+    new PrismaClientExceptionFilter(httpAdapter)
+  ) 
+  
   const configService = app.get(ConfigService);
 
   const port = configService.get('PORT', 8000);

@@ -80,9 +80,12 @@ export class FoodService {
         }
       })
 
-      return deletedFood
+      return {
+        deletedID: deletedFood.id
+      }
     } catch (error) {
-      throw error;
+      console.log(error)
+      throw error
     }
   }
 }
