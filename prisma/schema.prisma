@@ -138,7 +138,7 @@ model ServiceOrder {
 }
 
 model User {
-  id           String     @id
+  id           String     @id @default(uuid())
   display_name String
   username     String     @unique
   password     String

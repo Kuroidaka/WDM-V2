@@ -7,6 +7,8 @@ import { PrismaService } from './prisma/prisma.service';
 import { PrismaModule } from './prisma/prisma.module';
 import { LobbyModule } from './lobby/lobby.module';
 import { providePrismaClientExceptionFilter } from 'nestjs-prisma';
+import { AuthModule } from './auth/auth.module';
+import { UsersModule } from './users/users.module';
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { providePrismaClientExceptionFilter } from 'nestjs-prisma';
     FoodModule,
     PrismaModule,
     LobbyModule,
+    AuthModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [
