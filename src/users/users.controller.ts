@@ -11,8 +11,17 @@ export class UsersController {
     return this.userService.getUsers();
   }
 
-  @Get("find")
+  @Get('find')
   async findByUsername(@Query('username') username:string):Promise<User | undefined> {
     return this.userService.findByUsername(username)
   }
+
+  @Patch('/:id/update')
+  async updateUser(
+    @Param('id') id:string,
+    @Body('display_name') display_name:string
+  ) {
+    return this.userService.updateUser(id, display_name);
+  }
+
 }

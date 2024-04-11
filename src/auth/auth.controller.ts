@@ -30,4 +30,11 @@ export class AuthController {
   async register(@Body() body:RegisterDto) {
     return this.authService.register(body);
   }
+
+  @Patch('/change-password')
+  async changePassword (@Body() body:{username:string, password:string, oldPassword:string}) {
+    const { username, password, oldPassword } = body;
+
+    return this.authService.changePassword(username, password, oldPassword);
+  }
 }

@@ -1,16 +1,18 @@
 import { User } from '@prisma/client';
-import { ConflictException, Injectable } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { Permission } from 'src/privilege/interfaces/permission_list.interface';
 import { RegisterDto } from './dto/register.dto';
+import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private userService:UsersService,
-    private jwtService:JwtService
+    private jwtService:JwtService,
+    private prisma:PrismaService,
   ) {}
   
   private readonly saltRounds = 10; 
@@ -71,5 +73,31 @@ export class AuthService {
     }
   }
 
+  async changePassword(username:string, password:string, oldPassword:string) {
+    try {
+
+      // find username
+      const user = await this.userService.findByUsername(username);
+      if(!user) throw new NotFoundException('Username not found')
+
+      // compare password
+      const compareBool = await this.comparePasswords(oldPassword, user.password);
+      if(!compareBool) throw new UnauthorizedException('Invalid credential');
+
+      // hash the password using bcrypt
+      const hashedPassword = await this.hashPassword(password);
+
+      // update passwrod
+      const newUser = this.prisma.user.update({
+        where: { username },
+        data: { password: hashedPassword }
+      });
+
+      return newUser
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
+  }
 
 }
