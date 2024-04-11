@@ -59,22 +59,26 @@ model FoodOrder {
 }
 
 model LobType {
-  id              String   @id
+  id              String   @id @default(uuid())
   max_table_count Int
   min_table_price Int
   deposit_percent Int      @default(30)
   created_at      DateTime @default(now())
   updated_at      DateTime @default(now())
   type_name       String
+  deleted_at      DateTime?
   Lobby           Lobby[]
 }
 
 model Lobby {
-  id          String    @id
+  id          String    @id @default(uuid())
   name        String
   lob_type_id String
   LobType     LobType   @relation(fields: [lob_type_id], references: [id])
   Wedding     Wedding[]
+  deleted_at      DateTime?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @default(now())
 
   @@index([lob_type_id], map: "Lobby_lob_type_id_fkey")
 }

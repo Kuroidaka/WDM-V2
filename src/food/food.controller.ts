@@ -8,15 +8,15 @@ import { CreateFoodDto } from './dto-food/create_food.dto';
 export class FoodController {
   constructor(private readonly foodService: FoodService) {}
 
-  @Get('get')// Get All Food
+  @Get()// Get All Food
   async getAllFood() {
     return this.foodService.findAllFood()
   }
 
-  @Get('get/:foodID')// get food by id
-  async getFoodById(@Param() param:{foodID: string}) {
-    const { foodID } = param;
-    return this.foodService.findFoodByID(foodID)
+  @Get('/:id')// get food by id
+  async getFoodById(@Param() param:{id: string}) {
+    const { id } = param;
+    return this.foodService.findFoodByID(id)
   }
 
   @Post('create') // create food 
@@ -24,13 +24,13 @@ export class FoodController {
     return this.foodService.createFood(createData)
   }
 
-  @Patch('update/:foodID') //update food
+  @Patch('/:foodID') //update food
   async updateFood(@Param() param:{foodID: string}, @Body() updateData:UpdateFoodDto) {
     const { foodID } = param;
     return this.foodService.updateFood(foodID, updateData)
   }
 
-  @Delete('delete/:foodID')//delete food
+  @Delete('/:foodID')//delete food
   async deleteFood(@Param() param:{foodID:string}) {
    const { foodID } = param;
    

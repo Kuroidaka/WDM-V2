@@ -12,18 +12,18 @@ const logger = new Logger('main');
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    bufferLogs: true,
+    logger: ['error', 'warn'],
   });
 
-  const { httpAdapter } = app.get(HttpAdapterHost);
+  const { httpAdapter } = app.get(HttpAdapterHost,);
   app.useGlobalFilters(
     new HttpExceptionFilter(),
     new PrismaClientExceptionFilter(httpAdapter)
   ) 
   
-  const configService = app.get(ConfigService);
+  // const configService = app.get(ConfigService);
 
-  const port = configService.get('PORT', 8000);
+  const port = 8000
 
   app.enableCors({ credentials: true, origin: true });
 
