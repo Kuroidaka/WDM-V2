@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Permission, PermissionData } from 'src/privilege/permission_list.interface';
+import { Permission, PermissionData } from 'src/privilege/interfaces/permission_list.interface';
 import { CreateUserDto } from './dto/create_user.dto';
 
 

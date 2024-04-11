@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { CreateLobTypeDto } from './dto-Lobby/create_lobType.dto';
-import { UpdateLobTypeDto } from './dto-Lobby/update_lobType.dto';
-import { CreateLobDto } from './dto-Lobby/create_lobby.dto';
-import { UpdateLobDto } from './dto-Lobby/update_lobby.dto';
+import { CreateLobTypeDto } from './dto/create_lobType.dto';
+import { UpdateLobTypeDto } from './dto/update_lobType.dto';
+import { CreateLobDto } from './dto/create_lobby.dto';
+import { UpdateLobDto } from './dto/update_lobby.dto';
 import { LobType, Lobby } from '@prisma/client';
 import { getStartAndEndOfDay } from 'utils';
 @Injectable()

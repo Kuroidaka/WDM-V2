@@ -1,8 +1,8 @@
 import { LobType, Lobby } from '@prisma/client';
-import { CreateLobTypeDto } from './dto-Lobby/create_lobType.dto';
-import { CreateLobDto } from './dto-Lobby/create_lobby.dto';
-import { UpdateLobTypeDto } from './dto-Lobby/update_lobType.dto';
-import { UpdateLobDto } from './dto-Lobby/update_lobby.dto';
+import { CreateLobTypeDto } from './dto/create_lobType.dto';
+import { CreateLobDto } from './dto/create_lobby.dto';
+import { UpdateLobTypeDto } from './dto/update_lobType.dto';
+import { UpdateLobDto } from './dto/update_lobby.dto';
 import { LobbyService } from './lobby.service';
 import { Controller, Get, Post, Param, Body, Patch, Delete, Query } from '@nestjs/common';
 

@@ -1,8 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 import { FoodService } from './food.service';
 // import { PrismaClientExceptionFilter } from 'src/common/filters/prisma-exception.filter';
-import { UpdateFoodDto } from './dto-food/update_food.dto';
-import { CreateFoodDto } from './dto-food/create_food.dto';
+import { UpdateFoodDto } from './dto/update_food.dto';
+import { CreateFoodDto } from './dto/create_food.dto';
 
 @Controller('food')
 export class FoodController {

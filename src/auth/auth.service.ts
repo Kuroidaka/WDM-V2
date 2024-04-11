@@ -3,8 +3,8 @@ import { ConflictException, Injectable } from '@nestjs/common';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { Permission } from 'src/privilege/permission_list.interface';
-import { RegisterDto } from './dto-auth/register.dto';
+import { Permission } from 'src/privilege/interfaces/permission_list.interface';
+import { RegisterDto } from './dto/register.dto';
 
 @Injectable()
 export class AuthService {
