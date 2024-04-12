@@ -12,6 +12,7 @@ import { UsersModule } from './users/users.module';
 import { CustomerModule } from './customer/customer.module';
 import { WeddingModule } from './wedding/wedding.module';
 import { ServiceWeddingModule } from './service_wedding/service_wedding.module';
+import { BillModule } from './bill/bill.module';
 
 
 @Module({
@@ -27,6 +28,7 @@ import { ServiceWeddingModule } from './service_wedding/service_wedding.module';
     CustomerModule,
     WeddingModule,
     ServiceWeddingModule,
+    BillModule,
   ],
   controllers: [AppController],
   providers: [

@@ -32,4 +32,12 @@ export class WeddingController {
     return this.weddingService.orderService(weddingId, services);
   }
 
+  @Post('deposit')
+  async depositOrder(
+    @Body('transaction_amount') transaction_amount:number,
+    @Body('weddingId') weddingId:string
+  ) {
+    return this.weddingService.depositOrder(transaction_amount, weddingId);
+  }
+
 }

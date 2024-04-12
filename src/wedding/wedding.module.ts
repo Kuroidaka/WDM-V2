@@ -6,10 +6,11 @@ import { CustomerModule } from 'src/customer/customer.module';
 import { LobbyModule } from 'src/lobby/lobby.module';
 import { FoodModule } from 'src/food/food.module';
 import { ServiceWeddingModule } from 'src/service_wedding/service_wedding.module';
+import { BillModule } from 'src/bill/bill.module';
 
 @Module({
-  imports: [CustomerModule, LobbyModule, FoodModule, ServiceWeddingModule],
+  imports: [CustomerModule, LobbyModule, FoodModule, ServiceWeddingModule, BillModule],
   controllers: [WeddingController],
-  providers: [WeddingService, PrismaService, ],
+  providers: [WeddingService, PrismaService],
 })
 export class WeddingModule {}

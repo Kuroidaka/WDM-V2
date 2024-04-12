@@ -6,10 +6,12 @@ import { createWeddingDto } from './dto/create_wedding.dto';
 import { CustomerService } from 'src/customer/customer.service';
 import { LobbyService } from 'src/lobby/lobby.service';
 import { LobbyIncludedLobType } from 'src/lobby/lobby.interface';
-import { WeddingInterface, serviceOrder } from './wedding.interface';
+import { WeddingInterface, foodOrderWedding, serviceOrder } from './wedding.interface';
 import { FoodService } from 'src/food/food.service';
 import { FoodInterFace } from 'src/food/food.interface';
 import { ServiceInterFace } from 'src/service_wedding/service.interface';
+import { calculateTimeDifference } from 'utils';
+import { BillService } from 'src/bill/bill.service';
 
 @Injectable()
 export class WeddingService {
@@ -19,6 +21,7 @@ export class WeddingService {
     private lobbyService:LobbyService,
     private foodService:FoodService,
     private serviceWeddingService:ServiceWeddingService,
+    private billService:BillService,
   ) {}
 
   async findEventOnDate (wedding_date:(string | Date)) {
@@ -140,6 +143,46 @@ export class WeddingService {
       console.log(error);
       throw error;
     }
+  }
+
+  async getFoodPriceForWedding (weddingId:string) {
+
+    const dataWedding = await this.prisma.wedding.findUnique({
+      where : {
+        id: weddingId
+      }
+    })
+
+    if(!dataWedding) throw new NotFoundException(`not found any wedding data for id: ${weddingId}`)
+
+    const tableCount = dataWedding['table_count']
+
+    const foodWedding = await this.prisma.foodOrder.findMany({
+      where: {
+        "wedding_id":weddingId
+      }
+    })
+
+    const foodPrice = foodWedding.reduce((total, current) => {
+      return total += current.food_price * current.count * tableCount
+    }, 0)
+
+    return foodPrice
+  }
+
+  async getServicePriceForWedding(weddingId) {
+
+    const serviceWedding = await this.prisma.serviceOrder.findMany({
+      where: {
+        "wedding_id":weddingId
+      }
+    })
+
+    const servicePrice = serviceWedding.reduce((total, current) => {
+      return total += current.service_price * current.count
+    }, 0)
+
+    return servicePrice
   }
 
   // Food Order
@@ -333,35 +376,13 @@ export class WeddingService {
             throw error;
           }
         }
-        const getFoodPriceForWedding = async (weddingId:string) => {
-
-          const dataWedding = await this.prisma.wedding.findUnique({
-            where : {
-              id: weddingId
-            }
-          })
-      
-          const tableCount = dataWedding['table_count'] 
-      
-          const foodWedding = await this.prisma.foodOrder.findMany({
-            where: {
-              "wedding_id":weddingId
-            }
-          })
-      
-          const foodPrice = foodWedding.reduce((total, current) => {
-            return total += current.food_price * current.count * tableCount
-          }, 0)
-      
-          return foodPrice
-        }
 
     // Main 
     try {
       
       let totalPrice = 0
       // get food price
-      const foodPrice = await getFoodPriceForWedding(weddingId)
+      const foodPrice = await this.getFoodPriceForWedding(weddingId)
 
       totalPrice += foodPrice
 
@@ -374,6 +395,160 @@ export class WeddingService {
         service: serviceData,
         weddingData: dataWeeding
       }
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async modifyInventory(foodList:foodOrderWedding[]) {
+
+    for(const food of foodList) {
+      const foodID = food.food_id
+      const foodData = await this.foodService.findFoodByID(foodID)
+
+      let inventory = foodData.inventory
+
+      inventory -= food.count
+      
+      await this.foodService.updateInventory(foodID, inventory);
+
+    }
+  }
+
+  // Get Deposit
+  async getDeposit(weddingId) {
+
+    const weddingWithLobType = await this.prisma.wedding.findUnique({
+        where: {
+            id: weddingId,
+        },
+        include: {
+          Lobby: {
+            include: {
+              LobType: true
+            }
+          }
+        },
+    });
+    return weddingWithLobType.Lobby.LobType["deposit_percent"]
+  }
+
+  // Deposit
+  async depositOrder(
+    transactionAmount:number,
+    weddingId:string
+  ) {
+    try {
+      
+      let finalData:{
+        extraFee?: number,
+        totalPrice?: number,
+        weddingData?: WeddingInterface,
+        deposit_amount?: number,
+        remain?: number,
+        foodPrice?: number,
+        servicePrice?: number,
+      } = {}
+      // calc price
+      const foodPrice = await this.getFoodPriceForWedding(weddingId);
+      const servicePrice = await this.getServicePriceForWedding(weddingId);
+      const totalPrice = servicePrice + foodPrice
+      
+
+      // deposit
+      const deposit = await this.getDeposit(weddingId)
+      const depositRequire = deposit * totalPrice / 100
+      if(transactionAmount < depositRequire) {
+        throw new UnprocessableEntityException(`deposit amount for this lobby need to be ${deposit}% <=> ${depositRequire}`);
+      }
+
+      // check penalty 
+      let extraFee = 0
+      const dataWeeding = await this.getWeddingById(weddingId);
+      if(!dataWeeding) throw new NotFoundException(`No wedding data id: ${weddingId}`);
+
+      const isPenalty = dataWeeding["is_penalty_mode"]
+      if(isPenalty) {
+        const weddingDate = new Date(dataWeeding["wedding_date"])
+        const payDate = new Date()
+
+        const timeDifference = calculateTimeDifference(weddingDate, payDate);
+
+        if(timeDifference.days > 0) {
+          extraFee = timeDifference.days* (totalPrice / 100)
+          finalData.extraFee = extraFee
+
+
+        }
+      }
+
+      /*=============
+      PREVIOUS DEPOSIT
+      ===============*/
+
+      // check exist bill
+      const bill = await this.billService.getBillsByWeddingId(weddingId);
+      const recentBill = bill[0]
+      // if bill exist
+      let remainPrice
+      if(bill.length > 0) { //deposit before
+        if(recentBill['remain_amount'] <= 0) {
+          return { msg: `your bill have been fully paid`}
+        }
+        let newTotalPrice = recentBill['remain_amount']
+        if(!isPenalty && recentBill["extra_fee"] > 0) {
+          newTotalPrice -= recentBill["extra_fee"] 
+        }
+        else if(isPenalty && recentBill["extra_fee"] === 0) {
+          newTotalPrice += extraFee 
+        }
+        remainPrice = newTotalPrice - transactionAmount
+      }
+      else { //first time deposit
+        // calc remain price
+        let newTotalPrice = totalPrice
+        if(isPenalty) {
+          newTotalPrice = totalPrice + extraFee 
+        } 
+        remainPrice = newTotalPrice - transactionAmount
+
+        // update inventory
+        const foodDataWedding:foodOrderWedding[] = await this.prisma.foodOrder.findMany({
+          where: {
+            "wedding_id": weddingId
+          }
+        })
+        await this.modifyInventory(foodDataWedding);
+
+      }
+
+      // final data
+      finalData = {
+        ...finalData,
+        totalPrice: totalPrice,
+        weddingData: dataWeeding,
+        "deposit_amount": transactionAmount,
+        "remain": remainPrice,
+        "foodPrice": foodPrice,
+        "servicePrice": servicePrice,
+        extraFee
+      }
+
+      // create bill
+      await this.billService.createBill({
+        wedding_id: weddingId,
+        service_total_price: servicePrice,
+        total_price: totalPrice,
+        deposit_require: deposit,
+        deposit_amount: transactionAmount,
+        remain_amount: remainPrice,
+        extra_fee: extraFee,
+      })
+
+
+      return finalData;
+
     } catch (error) {
       console.log(error);
       throw error;

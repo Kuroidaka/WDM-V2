@@ -93,4 +93,19 @@ export class FoodService {
       throw error
     }
   }
+
+  async updateInventory(id:string, count:number) {
+    try {
+      const food = await this.prisma.food.update({
+        where: { id },
+        data: {
+            inventory: count,
+        },
+      });
+    return food
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 }

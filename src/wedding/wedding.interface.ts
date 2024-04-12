@@ -16,3 +16,15 @@ export interface serviceOrder {
   id:string;
   count:number;
 }
+
+export interface foodOrderWedding {
+  id: string;
+  food_id: string;
+  food_name: string;
+  food_price: number;
+  count: number;
+  note: string;
+  created_at: Date;
+  updated_at: Date;
+  wedding_id: string;
+}[]
