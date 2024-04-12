@@ -1,4 +1,4 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 
 import { UpdateFoodDto } from './dto/update_food.dto';
 import { CreateFoodDto } from './dto/create_food.dto';
@@ -74,6 +74,11 @@ export class FoodService {
 
   async deleteFood(id:string) {
     try {
+      // search exist food
+      const food = await this.findFoodByID(id);
+      if(!food) throw new NotFoundException(`food id: ${id} not found`)
+      
+
       const deletedFood = await this.prisma.food.delete({
         where: {
           id: id

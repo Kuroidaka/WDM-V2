@@ -8,7 +8,7 @@ datasource db {
 }
 
 model Bill {
-  id                  String   @id
+  id                  String   @id @default(uuid())
   wedding_id          String
   payment_date        DateTime
   service_total_price Int
@@ -25,7 +25,7 @@ model Bill {
 }
 
 model Customer {
-  id         String    @id
+  id         String    @id @default(uuid())
   name       String
   phone      String    @unique
   created_at DateTime  @default(now())
@@ -44,7 +44,7 @@ model Food {
 }
 
 model FoodOrder {
-  id         String   @id
+  id         String   @id @default(uuid())
   food_id    String
   food_name  String
   food_price Int
@@ -59,12 +59,12 @@ model FoodOrder {
 }
 
 model LobType {
-  id              String   @id @default(uuid())
+  id              String    @id @default(uuid())
   max_table_count Int
   min_table_price Int
-  deposit_percent Int      @default(30)
-  created_at      DateTime @default(now())
-  updated_at      DateTime @default(now())
+  deposit_percent Int       @default(30)
+  created_at      DateTime  @default(now())
+  updated_at      DateTime  @default(now())
   type_name       String
   deleted_at      DateTime?
   Lobby           Lobby[]
@@ -74,17 +74,17 @@ model Lobby {
   id          String    @id @default(uuid())
   name        String
   lob_type_id String
+  deleted_at  DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @default(now())
   LobType     LobType   @relation(fields: [lob_type_id], references: [id])
   Wedding     Wedding[]
-  deleted_at      DateTime?
-  created_at      DateTime @default(now())
-  updated_at      DateTime @default(now())
 
   @@index([lob_type_id], map: "Lobby_lob_type_id_fkey")
 }
 
 model Permission {
-  id             String           @id
+  id             String           @id @default(uuid())
   name           String
   description    String?
   page           Permission_page
@@ -94,7 +94,7 @@ model Permission {
 }
 
 model Role {
-  id             String           @id
+  id             String           @id @default(uuid())
   name           String           @unique
   created_at     DateTime         @default(now())
   updated_at     DateTime         @default(now())
@@ -115,16 +115,17 @@ model RolePermission {
 }
 
 model Service {
-  id         String   @id
+  id         String   @id @default(uuid())
   name       String
   price      Int
   status     Boolean
   created_at DateTime @default(now())
   updated_at DateTime @default(now())
+  inventory  Int
 }
 
 model ServiceOrder {
-  id            String   @id
+  id            String   @id @default(uuid())
   service_id    String
   service_name  String
   service_price Int
@@ -160,7 +161,7 @@ model UserRole {
 }
 
 model Wedding {
-  id              String         @id
+  id              String         @id @default(uuid())
   groom           String
   bride           String
   wedding_date    DateTime

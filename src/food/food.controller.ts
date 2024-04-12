@@ -6,7 +6,7 @@ import { CreateFoodDto } from './dto/create_food.dto';
 
 @Controller('food')
 export class FoodController {
-  constructor(private readonly foodService: FoodService) {}
+  constructor(private foodService: FoodService) {}
 
   @Get()// Get All Food
   async getAllFood() {

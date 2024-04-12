@@ -7,5 +7,6 @@ import { FoodController } from './food.controller';
   imports: [],
   controllers: [FoodController],
   providers: [FoodService, PrismaService],
+  exports: [FoodService]
 })
 export class FoodModule {}

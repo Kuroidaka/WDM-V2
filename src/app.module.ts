@@ -9,6 +9,10 @@ import { LobbyModule } from './lobby/lobby.module';
 import { providePrismaClientExceptionFilter } from 'nestjs-prisma';
 import { AuthModule } from './auth/auth.module';
 import { UsersModule } from './users/users.module';
+import { CustomerModule } from './customer/customer.module';
+import { WeddingModule } from './wedding/wedding.module';
+import { ServiceWeddingModule } from './service_wedding/service_wedding.module';
+
 
 @Module({
   imports: [
@@ -20,6 +24,9 @@ import { UsersModule } from './users/users.module';
     LobbyModule,
     AuthModule,
     UsersModule,
+    CustomerModule,
+    WeddingModule,
+    ServiceWeddingModule,
   ],
   controllers: [AppController],
   providers: [
