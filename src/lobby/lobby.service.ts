@@ -6,6 +6,7 @@ import { CreateLobDto } from './dto/create_lobby.dto';
 import { UpdateLobDto } from './dto/update_lobby.dto';
 import { LobType, Lobby } from '@prisma/client';
 import { getStartAndEndOfDay } from 'utils';
+import { LobbyIncludedLobType } from './lobby.interface';
 @Injectable()
 export class LobbyService {
   constructor(private prisma: PrismaService) {}
@@ -157,13 +158,18 @@ export class LobbyService {
     }
   }
 
-  async getLobbyById(id:string, includeDeletedBool: boolean):Promise<Lobby>{
+  async getLobbyById(id:string, includeDeletedBool: boolean):Promise<LobbyIncludedLobType>{
     try {
-
       const queryObject: {
         where: any,
+        include: {
+          LobType: boolean
+        }
       } = {
-        where: { id }
+        where: { id },
+        include: {
+          LobType: true
+        }
       };
 
       if(!includeDeletedBool) {
@@ -173,8 +179,7 @@ export class LobbyService {
         }
       }
 
-      const lobby:Lobby = await this.prisma.lobby.findUnique(queryObject)
-
+      const lobby:LobbyIncludedLobType = await this.prisma.lobby.findUnique(queryObject)
       return lobby
     } catch (error) {
       console.log(error)

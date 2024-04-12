@@ -5,6 +5,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Module({
   controllers: [LobbyController],
-  providers: [LobbyService, PrismaService]
+  providers: [LobbyService, PrismaService],
+  exports: [LobbyService]
 })
 export class LobbyModule {}
