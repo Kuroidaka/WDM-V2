@@ -26,19 +26,26 @@ export class AuthService {
   }
 
   async validateUser(username:string, password:string):Promise<any> {
-    // check exist user
-    const user:User = await this.userService.findByUsername(username);
+    try {
+      // check exist user
+      const user:User = await this.userService.findByUsername(username);
 
-    // check password
-    const checkPassword = await this.comparePasswords(password, user.password)
+      if(!user) throw new UnauthorizedException('No username found');
+      // check password
+      const checkPassword = await this.comparePasswords(password, user.password)
 
-    if(user && checkPassword) {
-      const { password, ...result } = user;
-      
-      return result
+      if(user && checkPassword) {
+        const { password, ...result } = user;
+        
+        return result
+      }
+
+      return null;
+    } catch (error) {
+      console.log(error);
+      throw error
     }
-
-    return null;
+  
   }
 
   async login(user:Omit<User, 'password'>, permissionList:Permission[]) {

@@ -16,3 +16,22 @@ export const calculateTimeDifference = (startDate:any, endDate:any) => {
   const days = Math.floor(difference / (1000 * 60 * 60 * 24));
   return { days };
 }
+
+export const calcPenalty = (startDate:Date, endDate:Date= new Date(), totalPrice:number) => {
+  let extraFee = 0
+  const weddingDate = new Date(startDate)
+  const payDate = new Date(endDate)
+  let isPenal = false
+
+  const timeDifference = calculateTimeDifference(weddingDate, payDate);
+
+  if(timeDifference.days > 0) {
+    extraFee = timeDifference.days* (totalPrice / 100)
+    isPenal = true
+  }
+
+  return {
+      isPenal,
+      extraFee
+  }
+}

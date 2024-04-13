@@ -10,8 +10,9 @@ import { WeddingInterface, foodOrderWedding, serviceOrder } from './wedding.inte
 import { FoodService } from 'src/food/food.service';
 import { FoodInterFace } from 'src/food/food.interface';
 import { ServiceInterFace } from 'src/service_wedding/service.interface';
-import { calculateTimeDifference } from 'utils';
+import { calcPenalty, calculateTimeDifference } from 'utils';
 import { BillService } from 'src/bill/bill.service';
+import { BillInterface } from 'src/bill/bill.interface';
 
 @Injectable()
 export class WeddingService {
@@ -73,11 +74,26 @@ export class WeddingService {
     }
   }
 
-  async getWeddingById(id:string) {
+  async getWeddingById({id, bill}:{id:string, bill?: boolean}) {
     try {
-      const wedding = await this.prisma.wedding.findUnique({
-        where: { id }
-      })
+      let queryObject:{
+        where: { id:string,},
+        include?: any,
+      } = { 
+        where: { id, },
+      }
+
+      if(bill) {
+        queryObject = { ...queryObject, include: {
+          Bill: {
+            orderBy: {
+                "created_at": 'desc'
+            }
+          }
+        }}
+      }
+
+      const wedding = await this.prisma.wedding.findUnique(queryObject)
 
       return wedding
     } catch (error) {
@@ -388,7 +404,7 @@ export class WeddingService {
 
       const serviceData = await serviceOrderProcess(services, weddingId);
 
-      const dataWeeding = await this.getWeddingById(weddingId);
+      const dataWeeding = await this.getWeddingById({id: weddingId});
 
       return { 
         totalPrice: totalPrice + serviceData.servicePrice,
@@ -434,6 +450,79 @@ export class WeddingService {
     return weddingWithLobType.Lobby.LobType["deposit_percent"]
   }
 
+  async preparePriceForPayment(weddingId:string) {
+     // calc price
+     const foodPrice = await this.getFoodPriceForWedding(weddingId);
+     const servicePrice = await this.getServicePriceForWedding(weddingId);
+     const totalPrice = servicePrice + foodPrice
+
+     return {
+      foodPrice,
+      servicePrice,
+      totalPrice
+     }
+  }
+
+  async getPenalty(totalPrice:number, isPenalty:boolean, weddingDate:Date) {
+    // check penalty 
+    let extraFee = 0
+    if(isPenalty) {
+      const payDate = new Date()
+
+      const timeDifference = calculateTimeDifference(weddingDate, payDate);
+
+      if(timeDifference.days > 0) {
+        extraFee = timeDifference.days* (totalPrice / 100)
+      }
+    }
+
+    return extraFee;
+  }
+
+  calculateRemainPrice ({
+    bills,
+    isPenalty,
+    extraFee,
+    totalPrice,
+    transactionAmount=0,
+  }: {
+    bills:BillInterface[],
+    isPenalty:boolean,
+    extraFee:number,
+    totalPrice:number,
+    transactionAmount?:number,
+  }):(number | string) {
+    const recentBill = bills[0]
+    let remainPrice = 0;
+    let newRemainPrice = 0
+    if(bills.length > 0) { //deposit before
+      if(recentBill['remain_amount'] <= 0) {
+        return 'your bill have been fully paid';
+      }
+
+      newRemainPrice = recentBill['remain_amount']
+      // calc remain price
+      if(!isPenalty && recentBill["extra_fee"] > 0) {
+        newRemainPrice -= recentBill["extra_fee"] 
+      }
+      else if(isPenalty && recentBill["extra_fee"] === 0) {
+        newRemainPrice += extraFee 
+      }
+      remainPrice = newRemainPrice - transactionAmount
+    }
+    else { //first time payment (no deposit before)
+      // calc remain price
+      newRemainPrice = totalPrice
+      if(isPenalty) {
+        newRemainPrice = totalPrice + extraFee 
+      } 
+      remainPrice = newRemainPrice - transactionAmount
+    }
+
+    return remainPrice
+  }
+
+
   // Deposit
   async depositOrder(
     transactionAmount:number,
@@ -451,38 +540,22 @@ export class WeddingService {
         servicePrice?: number,
       } = {}
       // calc price
-      const foodPrice = await this.getFoodPriceForWedding(weddingId);
-      const servicePrice = await this.getServicePriceForWedding(weddingId);
-      const totalPrice = servicePrice + foodPrice
-      
-
-      // deposit
+      const { foodPrice, servicePrice, totalPrice } = await this.preparePriceForPayment(weddingId);
+      // Get data wedding
+      const dataWeeding = await this.getWeddingById({id: weddingId});
+      if(!dataWeeding) throw new NotFoundException(`No wedding data id: ${weddingId}`);
+      const weddingDate = new Date(dataWeeding.wedding_date);
+      const isPenalty = dataWeeding["is_penalty_mode"]
       const deposit = await this.getDeposit(weddingId)
       const depositRequire = deposit * totalPrice / 100
+
+
+      // deposit
       if(transactionAmount < depositRequire) {
         throw new UnprocessableEntityException(`deposit amount for this lobby need to be ${deposit}% <=> ${depositRequire}`);
       }
-
-      // check penalty 
-      let extraFee = 0
-      const dataWeeding = await this.getWeddingById(weddingId);
-      if(!dataWeeding) throw new NotFoundException(`No wedding data id: ${weddingId}`);
-
-      const isPenalty = dataWeeding["is_penalty_mode"]
-      if(isPenalty) {
-        const weddingDate = new Date(dataWeeding["wedding_date"])
-        const payDate = new Date()
-
-        const timeDifference = calculateTimeDifference(weddingDate, payDate);
-
-        if(timeDifference.days > 0) {
-          extraFee = timeDifference.days* (totalPrice / 100)
-          finalData.extraFee = extraFee
-
-
-        }
-      }
-
+      // Get penalty 
+      const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate);
       /*=============
       PREVIOUS DEPOSIT
       ===============*/
@@ -491,7 +564,7 @@ export class WeddingService {
       const bill = await this.billService.getBillsByWeddingId(weddingId);
       const recentBill = bill[0]
       // if bill exist
-      let remainPrice
+      let remainPrice = 0;
       if(bill.length > 0) { //deposit before
         if(recentBill['remain_amount'] <= 0) {
           return { msg: `your bill have been fully paid`}
@@ -555,4 +628,167 @@ export class WeddingService {
     }
   }
 
+  // Full pay deposit
+  async fullPayOrder(
+    transactionAmount:number,
+    weddingId:string
+  ) {
+    try {
+      
+      let finalData:{
+        extraFee?: number,
+        totalPrice?: number,
+        weddingData?: WeddingInterface,
+        deposit_amount?: number,
+        remain?: number,
+        foodPrice?: number,
+        servicePrice?: number,
+      } = {}
+      // calc price
+      const { foodPrice, servicePrice, totalPrice } = await this.preparePriceForPayment(weddingId);
+      // Get data wedding
+      const dataWeeding = await this.getWeddingById({id: weddingId});
+      if(!dataWeeding) throw new NotFoundException(`No wedding data id: ${weddingId}`);
+
+      const weddingDate = new Date(dataWeeding.wedding_date);
+      const isPenalty = dataWeeding["is_penalty_mode"]
+
+      // Get penalty 
+      const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate);
+
+      /*=============
+      PREVIOUS DEPOSIT
+      ===============*/
+
+      // check exist bill
+      const bill = await this.billService.getBillsByWeddingId(weddingId);
+      const recentBill = bill[0]
+
+      // if bill exist
+      let remainPrice = 0;
+      let newTotalPrice = 0
+      if(bill.length > 0) { //deposit before
+        if(recentBill['remain_amount'] <= 0) {
+          return { msg: `your bill have been fully paid`}
+        }
+
+        newTotalPrice = recentBill['remain_amount']
+        // calc remain price
+        if(!isPenalty && recentBill["extra_fee"] > 0) {
+          newTotalPrice -= recentBill["extra_fee"] 
+        }
+        else if(isPenalty && recentBill["extra_fee"] === 0) {
+          newTotalPrice += extraFee 
+        }
+        remainPrice = newTotalPrice - transactionAmount
+      }
+      else { //first time payment (no deposit before)
+        // calc remain price
+        newTotalPrice = totalPrice
+        if(isPenalty) {
+          newTotalPrice = totalPrice + extraFee 
+        } 
+        remainPrice = newTotalPrice - transactionAmount
+      }
+      
+      if(remainPrice > 0) {
+        return { msg: `payment is not enough, you paid: ${transactionAmount} in total: ${newTotalPrice}`};
+      }
+       // update inventory
+      const foodDataWedding = await this.prisma.foodOrder.findMany({
+        where: {
+          "wedding_id": weddingId
+        }
+      })
+      await this.modifyInventory(foodDataWedding);
+      // final data
+      finalData = {
+        ...finalData,
+        totalPrice: totalPrice,
+        weddingData: dataWeeding,
+        "deposit_amount": transactionAmount,
+        "remain": remainPrice,
+        "foodPrice": foodPrice,
+        "servicePrice": servicePrice,
+        extraFee
+      }
+      // get deposit data
+      const deposit = await this.getDeposit(weddingId)
+
+      // create bill
+      await this.billService.createBill({
+        wedding_id: weddingId,
+        service_total_price: servicePrice,
+        total_price: totalPrice,
+        deposit_require: deposit,
+        deposit_amount: transactionAmount,
+        remain_amount: remainPrice,
+        extra_fee: extraFee
+      })
+
+
+      return finalData;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async togglePenalty(weddingId:string) {
+    try {
+      let totalPrice = 0
+      const wedding = await this.getWeddingById({id: weddingId});
+
+      const currentState = wedding['is_penalty_mode']
+
+      const order = await this.prisma.wedding.findUnique({
+        where: { id: weddingId, },
+        include: { 
+          Bill: {
+            orderBy: {
+              "created_at": 'desc'
+            }
+          },
+        },
+      })
+      
+      const bill = order.Bill[0]
+      totalPrice = bill.total_price
+      // if(!currentState) {
+      //   
+      //   const penalData = calcPenalty(orderDate, new Date(), totalPrice)
+        
+      //   if(penalData.isPenal) {
+      //     totalPrice = penalData.extraFee + totalPrice
+      //     extraFee = penalData.extraFee
+      //   }
+      // }
+      const weddingDate = new Date(order.wedding_date)
+      const extraFee = await this.getPenalty(totalPrice, !currentState, weddingDate);
+      // calculate remain price
+      const remainPrice = this.calculateRemainPrice({
+        bills: order.Bill,
+        isPenalty: !currentState,
+        extraFee,
+        totalPrice,
+      })
+
+      const result = await this.prisma.wedding.update({
+        where: { id: weddingId, },
+        data: { "is_penalty_mode": !currentState, },
+      })
+
+      const finalResult = {
+        is_penalty_mode : result['is_penalty_mode'],
+        total: totalPrice,
+        extraFee,
+        remainPrice
+      }
+
+      return finalResult;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 }
