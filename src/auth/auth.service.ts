@@ -3,7 +3,7 @@ import { ConflictException, Injectable, NotFoundException, UnauthorizedException
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { Permission } from 'src/privilege/interfaces/permission_list.interface';
+import { Permission } from 'src/privilege/privilege.interface.ts/permission_list.interface';
 import { RegisterDto } from './dto/register.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
 

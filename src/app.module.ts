@@ -13,6 +13,7 @@ import { CustomerModule } from './customer/customer.module';
 import { WeddingModule } from './wedding/wedding.module';
 import { ServiceWeddingModule } from './service_wedding/service_wedding.module';
 import { BillModule } from './bill/bill.module';
+import { PrivilegeModule } from './privilege/privilege.module';
 
 
 @Module({
@@ -29,6 +30,7 @@ import { BillModule } from './bill/bill.module';
     WeddingModule,
     ServiceWeddingModule,
     BillModule,
+    PrivilegeModule,
   ],
   controllers: [AppController],
   providers: [

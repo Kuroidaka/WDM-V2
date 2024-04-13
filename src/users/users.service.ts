@@ -1,7 +1,7 @@
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Permission, PermissionData } from 'src/privilege/interfaces/permission_list.interface';
+import { Permission, PermissionData } from 'src/privilege/privilege.interface.ts/permission_list.interface';
 import { CreateUserDto } from './dto/create_user.dto';
 import { UpdateUserDto } from './dto/update_user.dto';
 
@@ -17,6 +17,7 @@ export class UsersService {
           select: {
             Role: {
               select: {
+                name: true,
                 RolePermission: {
                   select: {
                     Permission: {
@@ -43,7 +44,8 @@ export class UsersService {
       const { UserRole, ...userData } = user;
       return {
         ...userData,
-        PermissionList: tempData
+        PermissionList: tempData,
+        role: user.UserRole[0]?.Role.name,
       };
     });
   }

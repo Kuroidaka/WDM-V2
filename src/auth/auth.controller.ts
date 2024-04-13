@@ -2,7 +2,7 @@ import { AuthService } from './auth.service';
 import { Controller, Get, Post, Param, Body, Patch, Delete, Query, UseGuards, Request, BadRequestException, ConflictException } from '@nestjs/common';
 import { LocalAuthGuard } from './local-auth.guard';
 import { UsersService } from 'src/users/users.service';
-import { Permission } from 'src/privilege/interfaces/permission_list.interface';
+import { Permission } from 'src/privilege/privilege.interface.ts/permission_list.interface';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RegisterDto } from './dto/register.dto';
 
