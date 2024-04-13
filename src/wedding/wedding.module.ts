@@ -7,9 +7,10 @@ import { LobbyModule } from 'src/lobby/lobby.module';
 import { FoodModule } from 'src/food/food.module';
 import { ServiceWeddingModule } from 'src/service_wedding/service_wedding.module';
 import { BillModule } from 'src/bill/bill.module';
+import { PrivilegeModule } from 'src/privilege/privilege.module';
 
 @Module({
-  imports: [CustomerModule, LobbyModule, FoodModule, ServiceWeddingModule, BillModule],
+  imports: [CustomerModule, LobbyModule, FoodModule, ServiceWeddingModule, BillModule, PrivilegeModule],
   controllers: [WeddingController],
   providers: [WeddingService, PrismaService],
 })

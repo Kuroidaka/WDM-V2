@@ -1,6 +1,11 @@
-import { Controller, Post, Body, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, Get, Query, UseGuards } from '@nestjs/common';
 import { CustomerService } from './customer.service';
+import { PageAccess } from 'src/auth/page_access.decorator';
+import { PageGuard } from 'src/auth/page.guard';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 
+@PageAccess('order')
+@UseGuards(JwtAuthGuard, PageGuard)
 @Controller('customer')
 export class CustomerController {
   constructor(private customerService:CustomerService) {}

@@ -153,6 +153,42 @@ export class PrivilegeService {
     }
   }
 
+  async removeRolePermission(roleID:string, permissionID:string) {
+    try {
+      // check role existed from database
+      const roleData = await this.prisma.role.findUnique({
+        where: { id: roleID, },
+      })
+      if(!roleData) throw new BadRequestException("role is not existed");
+
+      // check roleID have permissionID
+      const rolePermissionCheck = await this.prisma.rolePermission.findMany({
+        where: {
+          AND: [
+            { role_id: roleID, },
+            { permission_id: permissionID, },
+          ]
+        }
+      });
+
+      if(rolePermissionCheck.length == 0) {
+        throw new ConflictException(`Role ID: ${roleID} Do not have permission: ${permissionID}`);
+      }
+
+      await this.prisma.rolePermission.delete({
+          where: {
+            role_id_permission_id: {
+              role_id: roleID,
+              permission_id: permissionID,
+            },
+          } as any,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async setUserRole(userID:string, roleID:string) {
     try {
       
@@ -204,6 +240,29 @@ export class PrivilegeService {
       throw error;
     }
   }
+
+  async userHasPermission(userId:string, page:string):Promise<boolean> {
+    try {
+      const roles = await this.prisma.userRole.findMany({
+        where: { user_id: userId },
+        include: { Role: {
+          include: { RolePermission: {
+            include: { Permission: true }
+          }}
+        }}
+      });
+  
+      return roles.some(role => 
+        role.Role.RolePermission.some(rp => 
+          rp.Permission.page === page
+        )
+      );
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async template() {
     try {
       

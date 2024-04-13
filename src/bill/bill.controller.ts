@@ -7,7 +7,7 @@ export class BillController {
   constructor(private billService:BillService) {}
 
   @Get()// Get all bill
-  async getAllFood() {
+  async getBills() {
     return this.billService.getBills()
   }
 

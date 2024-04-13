@@ -5,15 +5,14 @@ import { UsersService } from 'src/users/users.service';
 import { Permission } from 'src/privilege/privilege.interface.ts/permission_list.interface';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { RegisterDto } from './dto/register.dto';
-
-
-
+import { PrivilegeService } from 'src/privilege/privilege.service';
 
 @Controller('auth')
 export class AuthController {
   constructor( 
     private authService:AuthService,
-    private userService:UsersService
+    private userService:UsersService,
+    private privilegeService:PrivilegeService,
   ) {}
 
   @UseGuards(LocalAuthGuard)
@@ -36,5 +35,10 @@ export class AuthController {
     const { username, password, oldPassword } = body;
 
     return this.authService.changePassword(username, password, oldPassword);
+  }
+
+  @Get('check-permission/:userId')
+  async CheckUserPermission(@Param('userId') userId:string, @Query('page') page:string) {
+    return this.privilegeService.userHasPermission(userId, page);
   }
 }

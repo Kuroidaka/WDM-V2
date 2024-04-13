@@ -112,6 +112,7 @@ model RolePermission {
 
   @@id([role_id, permission_id])
   @@index([permission_id], map: "RolePermission_permission_id_fkey")
+  
 }
 
 model Service {

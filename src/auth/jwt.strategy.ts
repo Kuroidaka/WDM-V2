@@ -18,8 +18,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       throw new UnauthorizedException('Invalid token or token expired');
     }
 
-    // check business logic permission for register
-    if(!payload.permissionList.some(permission => permission.page === 'user')) throw new UnauthorizedException('you don\'t have permission')
+    // // check business logic permission for register
+    // if(!payload.permissionList.some(permission => permission.page === 'user')) throw new UnauthorizedException('you don\'t have permission')
 
     return { id: payload.sub, username: payload.username, permissionList: payload.permissionList };
   }

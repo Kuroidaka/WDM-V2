@@ -1,6 +1,10 @@
-import { Controller, Get, Post, Param, Body, Patch, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Patch, Delete, Query, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from '@prisma/client';
+// import { PageAccess } from 'src/auth/page_access.decorator';
+// import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+// import { PageGuard } from 'src/auth/page.guard';
+
 
 @Controller('users')
 export class UsersController {

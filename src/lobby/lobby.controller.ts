@@ -4,13 +4,16 @@ import { CreateLobDto } from './dto/create_lobby.dto';
 import { UpdateLobTypeDto } from './dto/update_lobType.dto';
 import { UpdateLobDto } from './dto/update_lobby.dto';
 import { LobbyService } from './lobby.service';
-import { Controller, Get, Post, Param, Body, Patch, Delete, Query } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Patch, Query, UseGuards } from '@nestjs/common';
+import { PageAccess } from 'src/auth/page_access.decorator';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { PageGuard } from 'src/auth/page.guard';
 
+@PageAccess('lobby')
+@UseGuards(JwtAuthGuard, PageGuard)
 @Controller('lobby')
 export class LobbyController {
   constructor(private lobbyService:LobbyService) {}
-
-
   /*
   =================== LOBBY TYPE ===================
    */

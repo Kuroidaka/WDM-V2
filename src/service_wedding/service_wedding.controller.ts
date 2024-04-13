@@ -1,8 +1,13 @@
+import { PageAccess } from 'src/auth/page_access.decorator';
 import { CreateServiceDto } from './dto /create_service.dto';
 import { UpdateServiceDto } from './dto /update_service.dto';
 import { ServiceWeddingService } from './service_wedding.service';
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { PageGuard } from 'src/auth/page.guard';
 
+@PageAccess('food_service')
+@UseGuards(JwtAuthGuard, PageGuard)
 @Controller('service')
 export class ServiceWeddingController {
   constructor(private serviceWeddingService: ServiceWeddingService) {}

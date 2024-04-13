@@ -1,7 +1,12 @@
+import { PageAccess } from 'src/auth/page_access.decorator';
 import { createWeddingDto } from './dto/create_wedding.dto';
 import { WeddingService } from './wedding.service';
-import { Body, Controller, Get, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { PageGuard } from 'src/auth/page.guard';
 
+@PageAccess('order')
+@UseGuards(JwtAuthGuard, PageGuard)
 @Controller('wedding')
 export class WeddingController {
   constructor(private weddingService:WeddingService) {}
