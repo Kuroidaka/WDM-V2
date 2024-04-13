@@ -10,7 +10,7 @@ import { WeddingInterface, foodOrderWedding, serviceOrder } from './wedding.inte
 import { FoodService } from 'src/food/food.service';
 import { FoodInterFace } from 'src/food/food.interface';
 import { ServiceInterFace } from 'src/service_wedding/service.interface';
-import { calcPenalty, calculateTimeDifference } from 'utils';
+import { calculateTimeDifference } from 'utils';
 import { BillService } from 'src/bill/bill.service';
 import { BillInterface } from 'src/bill/bill.interface';
 
@@ -491,37 +491,42 @@ export class WeddingService {
     extraFee:number,
     totalPrice:number,
     transactionAmount?:number,
-  }):(number | string) {
+  }):{
+    remainPrice: (number | string),
+    newTotalPrice?: number
+  } {
     const recentBill = bills[0]
     let remainPrice = 0;
-    let newRemainPrice = 0
+    let newTotalPrice = 0
     if(bills.length > 0) { //deposit before
       if(recentBill['remain_amount'] <= 0) {
-        return 'your bill have been fully paid';
+        return { remainPrice: 'your bill have been fully paid' };
       }
 
-      newRemainPrice = recentBill['remain_amount']
+      newTotalPrice = recentBill['remain_amount']
       // calc remain price
       if(!isPenalty && recentBill["extra_fee"] > 0) {
-        newRemainPrice -= recentBill["extra_fee"] 
+        newTotalPrice -= recentBill["extra_fee"] 
       }
       else if(isPenalty && recentBill["extra_fee"] === 0) {
-        newRemainPrice += extraFee 
+        newTotalPrice += extraFee 
       }
-      remainPrice = newRemainPrice - transactionAmount
+      remainPrice = newTotalPrice - transactionAmount
     }
     else { //first time payment (no deposit before)
       // calc remain price
-      newRemainPrice = totalPrice
+      newTotalPrice = totalPrice
       if(isPenalty) {
-        newRemainPrice = totalPrice + extraFee 
+        newTotalPrice = totalPrice + extraFee 
       } 
-      remainPrice = newRemainPrice - transactionAmount
+      remainPrice = newTotalPrice - transactionAmount
     }
 
-    return remainPrice
+    return {
+      remainPrice,
+      newTotalPrice
+    }
   }
-
 
   // Deposit
   async depositOrder(
@@ -549,11 +554,6 @@ export class WeddingService {
       const deposit = await this.getDeposit(weddingId)
       const depositRequire = deposit * totalPrice / 100
 
-
-      // deposit
-      if(transactionAmount < depositRequire) {
-        throw new UnprocessableEntityException(`deposit amount for this lobby need to be ${deposit}% <=> ${depositRequire}`);
-      }
       // Get penalty 
       const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate);
       /*=============
@@ -561,39 +561,23 @@ export class WeddingService {
       ===============*/
 
       // check exist bill
-      const bill = await this.billService.getBillsByWeddingId(weddingId);
-      const recentBill = bill[0]
-      // if bill exist
-      let remainPrice = 0;
-      if(bill.length > 0) { //deposit before
-        if(recentBill['remain_amount'] <= 0) {
-          return { msg: `your bill have been fully paid`}
-        }
-        let newTotalPrice = recentBill['remain_amount']
-        if(!isPenalty && recentBill["extra_fee"] > 0) {
-          newTotalPrice -= recentBill["extra_fee"] 
-        }
-        else if(isPenalty && recentBill["extra_fee"] === 0) {
-          newTotalPrice += extraFee 
-        }
-        remainPrice = newTotalPrice - transactionAmount
+      const bills = await this.billService.getBillsByWeddingId(weddingId);
+
+      // calculate remain price
+      const { remainPrice } = this.calculateRemainPrice({
+        bills,
+        isPenalty: isPenalty,
+        extraFee,
+        totalPrice,
+        transactionAmount
+      })
+      if(typeof remainPrice === 'string') {
+        return { msg: remainPrice }
       }
-      else { //first time deposit
-        // calc remain price
-        let newTotalPrice = totalPrice
-        if(isPenalty) {
-          newTotalPrice = totalPrice + extraFee 
-        } 
-        remainPrice = newTotalPrice - transactionAmount
 
-        // update inventory
-        const foodDataWedding:foodOrderWedding[] = await this.prisma.foodOrder.findMany({
-          where: {
-            "wedding_id": weddingId
-          }
-        })
-        await this.modifyInventory(foodDataWedding);
-
+      // deposit
+      if(transactionAmount < depositRequire) {
+        throw new UnprocessableEntityException(`deposit amount for this lobby need to be ${deposit}% <=> ${depositRequire}`);
       }
 
       // final data
@@ -661,34 +645,18 @@ export class WeddingService {
       ===============*/
 
       // check exist bill
-      const bill = await this.billService.getBillsByWeddingId(weddingId);
-      const recentBill = bill[0]
+      const bills = await this.billService.getBillsByWeddingId(weddingId);
 
       // if bill exist
-      let remainPrice = 0;
-      let newTotalPrice = 0
-      if(bill.length > 0) { //deposit before
-        if(recentBill['remain_amount'] <= 0) {
-          return { msg: `your bill have been fully paid`}
-        }
-
-        newTotalPrice = recentBill['remain_amount']
-        // calc remain price
-        if(!isPenalty && recentBill["extra_fee"] > 0) {
-          newTotalPrice -= recentBill["extra_fee"] 
-        }
-        else if(isPenalty && recentBill["extra_fee"] === 0) {
-          newTotalPrice += extraFee 
-        }
-        remainPrice = newTotalPrice - transactionAmount
-      }
-      else { //first time payment (no deposit before)
-        // calc remain price
-        newTotalPrice = totalPrice
-        if(isPenalty) {
-          newTotalPrice = totalPrice + extraFee 
-        } 
-        remainPrice = newTotalPrice - transactionAmount
+      const { remainPrice, newTotalPrice } = this.calculateRemainPrice({
+        bills,
+        isPenalty: isPenalty,
+        extraFee,
+        totalPrice,
+        transactionAmount
+      })
+      if(typeof remainPrice === 'string') {
+        return { msg: remainPrice }
       }
       
       if(remainPrice > 0) {
@@ -766,7 +734,7 @@ export class WeddingService {
       const weddingDate = new Date(order.wedding_date)
       const extraFee = await this.getPenalty(totalPrice, !currentState, weddingDate);
       // calculate remain price
-      const remainPrice = this.calculateRemainPrice({
+      const { remainPrice } = this.calculateRemainPrice({
         bills: order.Bill,
         isPenalty: !currentState,
         extraFee,
