@@ -16,6 +16,26 @@ export class BillService {
     }
   }
 
+  async getMonthBills(month:number, year:number){
+    try {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0); 
+
+      const bills = await this.prisma.bill.findMany({
+        where: {
+          "payment_date": {
+            gte: startDate,
+            lte: endDate
+          }
+        }
+      })
+      return bills
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async getBillsByWeddingId(weddingId:string) {
     try {
       const bills = await this.prisma.bill.findMany({

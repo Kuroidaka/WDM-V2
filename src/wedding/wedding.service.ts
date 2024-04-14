@@ -25,6 +25,42 @@ export class WeddingService {
     private billService:BillService,
   ) {}
 
+  async weddingNum() {
+    try {
+
+      const weddingNum = await this.prisma.wedding.count();
+      
+      return weddingNum;
+
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async getMonthWedding(month:number, year:number) {
+    try {
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0); 
+
+      const weddings = await this.prisma.wedding.findMany({
+          where: {
+            "wedding_date": {
+              gte: startDate,
+              lte: endDate
+            }
+          }
+        }
+      );
+      
+      return weddings;
+
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async findEventOnDate (wedding_date:(string | Date)) {
     const startDate = new Date(wedding_date);
     startDate.setHours(0, 0, 0, 0);
@@ -44,11 +80,11 @@ export class WeddingService {
     return events
   }
 
-  async getWeddings() {
+  async getWeddings(bill?: boolean) {
     try {
-      const queryObject:{
+      let queryObject:{
         include: {
-          Bill: boolean,
+          Bill?: any,
           Customer: boolean,
         }
       } = {
@@ -57,6 +93,18 @@ export class WeddingService {
           Customer: true,
         }
       };
+
+      if(bill) {
+        queryObject = { ...queryObject, include: {
+          ...queryObject.include,
+          Bill: {
+            orderBy: {
+                "created_at": 'desc'
+            }
+          }
+        }}
+      }
+
       const weddingData = await this.prisma.wedding.findMany(queryObject);
       const weddingList = weddingData.map(data => {
         if(data.Bill.length > 0) {

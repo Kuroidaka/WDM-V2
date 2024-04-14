@@ -13,5 +13,6 @@ import { PrivilegeModule } from 'src/privilege/privilege.module';
   imports: [CustomerModule, LobbyModule, FoodModule, ServiceWeddingModule, BillModule, PrivilegeModule],
   controllers: [WeddingController],
   providers: [WeddingService, PrismaService],
+  exports: [WeddingService]
 })
 export class WeddingModule {}

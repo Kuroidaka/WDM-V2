@@ -14,6 +14,7 @@ import { WeddingModule } from './wedding/wedding.module';
 import { ServiceWeddingModule } from './service_wedding/service_wedding.module';
 import { BillModule } from './bill/bill.module';
 import { PrivilegeModule } from './privilege/privilege.module';
+import { RevenueModule } from './revenue/revenue.module';
 
 
 @Module({
@@ -31,6 +32,7 @@ import { PrivilegeModule } from './privilege/privilege.module';
     ServiceWeddingModule,
     BillModule,
     PrivilegeModule,
+    RevenueModule,
   ],
   controllers: [AppController],
   providers: [
