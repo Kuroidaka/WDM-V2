@@ -1,7 +1,7 @@
 import { PageAccess } from 'src/auth/page_access.decorator';
 import { createWeddingDto } from './dto/create_wedding.dto';
 import { WeddingService } from './wedding.service';
-import { Body, Controller, Get, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Query, UseGuards, Param } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PageGuard } from 'src/auth/page.guard';
 
@@ -11,9 +11,9 @@ import { PageGuard } from 'src/auth/page.guard';
 export class WeddingController {
   constructor(private weddingService:WeddingService) {}
 
-  @Get()
+  @Get('/:weddingId')
   async getWeddingById(
-    @Query('weddingId') weddingId:string,
+    @Param('weddingId') weddingId:string,
     @Query('bill') bill=false
   ) {
     return this.weddingService.getWeddingById({id: weddingId, bill});

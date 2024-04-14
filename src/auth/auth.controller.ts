@@ -1,5 +1,5 @@
 import { AuthService } from './auth.service';
-import { Controller, Get, Post, Param, Body, Patch, Delete, Query, UseGuards, Request, BadRequestException, ConflictException } from '@nestjs/common';
+import { Controller, Get, Post, Param, Body, Patch, Query, UseGuards, Request } from '@nestjs/common';
 import { LocalAuthGuard } from './local-auth.guard';
 import { UsersService } from 'src/users/users.service';
 import { Permission } from 'src/privilege/privilege.interface.ts/permission_list.interface';
@@ -40,5 +40,11 @@ export class AuthController {
   @Get('check-permission/:userId')
   async CheckUserPermission(@Param('userId') userId:string, @Query('page') page:string) {
     return this.privilegeService.userHasPermission(userId, page);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('verify-token')
+  async verifyToken(@Request() req) {
+    return req.user
   }
 }

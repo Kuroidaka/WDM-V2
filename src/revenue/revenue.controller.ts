@@ -19,7 +19,7 @@ export class RevenueController {
   }
 
   @Get('wedding-number')
-  async countMonthWedding(
+  async getMonthWedding(
     @Query('year') year:string, 
     @Query('month') month:string,
   ) {

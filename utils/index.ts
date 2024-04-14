@@ -35,3 +35,7 @@ export const calcPenalty = (startDate:Date, endDate:Date= new Date(), totalPrice
       extraFee
   }
 }
+
+export function isObject(value:any):boolean {
+  return value !== null && typeof value === 'object';
+}
