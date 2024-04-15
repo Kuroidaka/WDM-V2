@@ -1,17 +1,35 @@
+import { ConfigService } from '@nestjs/config';
 import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 
 import { UpdateFoodDto } from './dto/update_food.dto';
 import { CreateFoodDto } from './dto/create_food.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { FoodInterFace } from './food.interface';
 
 @Injectable()
 export class FoodService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService:ConfigService
+  ) {}
 
   async findAllFood() {
     try {
-      const foods = await this.prisma.food.findMany({});
-      return foods;
+      const foods = await this.prisma.food.findMany({
+        include: {
+          foodFiles: {
+            orderBy: {
+              created_at: 'desc'
+            },
+            include: {
+              image: true
+            }
+          }
+        }
+      });
+
+  
+      return this.processFoodImageUrl(foods);
     } catch (error) {
       throw error;
     }
@@ -19,15 +37,41 @@ export class FoodService {
 
   async findFoodByID(id:string) {
     try {
-      const foods = await this.prisma.food.findUnique({
+      const food = await this.prisma.food.findUnique({
         where: {
           id: id
+        },
+        include: {
+          foodFiles: {
+            orderBy: {
+              created_at: 'desc'
+            },
+            include: {
+              image: true
+            }
+          }
         }
       });
-      return foods;
+
+    return this.processFoodImageUrl([food])[0];
     } catch (error) {
       throw error
     }
+  }
+
+  processFoodImageUrl(foods:FoodInterFace[]) {
+    const BASEURL = this.configService.get<string>('BASE_URL');
+    const PREFIX = this.configService.get<string>('PREFIX');
+
+    const imageURL = `${BASEURL}${PREFIX}/file/`
+    const result = foods.map(food => {
+      const { foodFiles, ...foodData } = food;
+      const url = foodFiles.length > 0 ? imageURL + foodFiles[0].image.file_name : null;
+
+      return { ...foodData, url };
+    });
+
+    return result;
   }
   
   async updateFood(id:string, updateData:UpdateFoodDto ) {

@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateServiceDto } from './dto/create_service.dto';
@@ -6,12 +7,26 @@ import { ServiceInterFace } from './service.interface';
 
 @Injectable()
 export class ServiceWeddingService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private configService:ConfigService
+  ) {}
 
   async findServices():Promise<ServiceInterFace[] | undefined> {
     try {
-      const services = await this.prisma.service.findMany({});
-      return services;
+      const services = await this.prisma.service.findMany({
+        include: {
+          serviceFiles: {
+            orderBy: {
+              created_at: 'desc'
+            },
+            include: {
+              image: true
+            }
+          }
+        }
+      });
+      return this.processServiceImageUrl(services);
     } catch (error) {
       throw error;
     }
@@ -20,12 +35,37 @@ export class ServiceWeddingService {
   async findServiceByID(id:string):Promise<ServiceInterFace | undefined> {
     try {
       const service = await this.prisma.service.findUnique({
-        where: { id }
+        where: { id },
+        include: {
+          serviceFiles: {
+            orderBy: {
+              created_at: 'desc'
+            },
+            include: {
+              image: true
+            }
+          }
+        }
       })
-      return service;
+      return this.processServiceImageUrl([service])[0];
     } catch (error) {
       throw error
     }
+  }
+
+  processServiceImageUrl(services:ServiceInterFace[]) {
+    const BASEURL = this.configService.get<string>('BASE_URL');
+    const PREFIX = this.configService.get<string>('PREFIX');
+
+    const imageURL = `${BASEURL}${PREFIX}/file/`
+    const result = services.map(service => {
+      const { serviceFiles, ...serviceData } = service;
+      const url = serviceFiles.length > 0 ? imageURL + serviceFiles[0].image.file_name : null;
+
+      return { ...serviceData, url };
+    });
+
+    return result;
   }
   
   async updateService(id:string, updateData:UpdateServiceDto ) {

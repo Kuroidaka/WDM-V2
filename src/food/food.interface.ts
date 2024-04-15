@@ -1,3 +1,5 @@
+import { FoodLinkImage } from "src/file/file.interface";
+
 export interface FoodInterFace {
   id: string;
   name: string;
@@ -6,4 +8,5 @@ export interface FoodInterFace {
   created_at: Date;
   updated_at: Date;
   inventory: number;
+  foodFiles?: FoodLinkImage[];
 }

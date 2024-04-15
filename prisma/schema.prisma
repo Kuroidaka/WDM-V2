@@ -34,13 +34,14 @@ model Customer {
 }
 
 model Food {
-  id         String   @id @default(uuid())
+  id         String         @id @default(uuid())
   name       String
   price      Int
-  status     Boolean  @default(true)
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
+  status     Boolean        @default(true)
+  created_at DateTime       @default(now())
+  updated_at DateTime       @default(now())
   inventory  Int
+  foodFiles  FoodFileLink[]
 }
 
 model FoodOrder {
@@ -112,17 +113,17 @@ model RolePermission {
 
   @@id([role_id, permission_id])
   @@index([permission_id], map: "RolePermission_permission_id_fkey")
-  
 }
 
 model Service {
-  id         String   @id @default(uuid())
-  name       String
-  price      Int
-  status     Boolean
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
-  inventory  Int
+  id           String            @id @default(uuid())
+  name         String
+  price        Int
+  status       Boolean
+  created_at   DateTime          @default(now())
+  updated_at   DateTime          @default(now())
+  inventory    Int
+  serviceFiles ServiceFileLink[]
 }
 
 model ServiceOrder {
@@ -182,6 +183,39 @@ model Wedding {
 
   @@index([customer_id], map: "Wedding_Customer_id_fkey")
   @@index([lobby_id], map: "Wedding_lobby_id_fkey")
+}
+
+model Image {
+  id           String            @id @default(uuid())
+  file_name    String
+  created_at   DateTime          @default(now())
+  updated_at   DateTime          @default(now()) @updatedAt
+  foodFiles    FoodFileLink[]
+  serviceFiles ServiceFileLink[]
+}
+
+model FoodFileLink {
+  file_id    String
+  food_id    String
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+  image      Image    @relation(fields: [file_id], references: [id])
+  food       Food     @relation(fields: [food_id], references: [id])
+
+  @@id([food_id, file_id])
+  @@index([file_id], map: "FoodFileLink_file_id_fkey")
+}
+
+model ServiceFileLink {
+  file_id    String
+  service_id String
+  created_at DateTime @default(now())
+  updated_at DateTime @default(now()) @updatedAt
+  image      Image    @relation(fields: [file_id], references: [id])
+  service    Service  @relation(fields: [service_id], references: [id])
+
+  @@id([file_id, service_id])
+  @@index([service_id], map: "ServiceFileLink_service_id_fkey")
 }
 
 enum Permission_page {

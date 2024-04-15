@@ -15,6 +15,7 @@ import { ServiceWeddingModule } from './service_wedding/service_wedding.module';
 import { BillModule } from './bill/bill.module';
 import { PrivilegeModule } from './privilege/privilege.module';
 import { RevenueModule } from './revenue/revenue.module';
+import { FileModule } from './file/file.module';
 
 
 @Module({
@@ -33,6 +34,7 @@ import { RevenueModule } from './revenue/revenue.module';
     BillModule,
     PrivilegeModule,
     RevenueModule,
+    FileModule,
   ],
   controllers: [AppController],
   providers: [

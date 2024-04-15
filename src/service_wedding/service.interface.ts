@@ -1,3 +1,5 @@
+import { ServiceLinkImage } from "src/file/file.interface";
+
 export interface ServiceInterFace {
   id: string;
   name: string;
@@ -6,4 +8,5 @@ export interface ServiceInterFace {
   created_at: Date;
   updated_at: Date;
   inventory: number;
+  serviceFiles?: ServiceLinkImage[];
 }
