@@ -1,5 +1,5 @@
 import { PageAccess } from 'src/auth/page_access.decorator';
-import { createWeddingDto } from './dto/create_wedding.dto';
+import { createWeddingDto } from './create_wedding.dto';
 import { WeddingService } from './wedding.service';
 import { Body, Controller, Get, Patch, Post, Query, UseGuards, Param } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';

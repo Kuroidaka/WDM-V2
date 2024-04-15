@@ -1,6 +1,6 @@
 import { PageAccess } from 'src/auth/page_access.decorator';
-import { CreateServiceDto } from './dto /create_service.dto';
-import { UpdateServiceDto } from './dto /update_service.dto';
+import { CreateServiceDto } from './dto/create_service.dto';
+import { UpdateServiceDto } from './dto/update_service.dto';
 import { ServiceWeddingService } from './service_wedding.service';
 import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';

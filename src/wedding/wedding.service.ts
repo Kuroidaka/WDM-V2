@@ -2,7 +2,7 @@ import { ServiceWeddingService } from './../service_wedding/service_wedding.serv
 
 import { BadGatewayException, BadRequestException, ConflictException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { createWeddingDto } from './dto/create_wedding.dto';
+import { createWeddingDto } from './create_wedding.dto';
 import { CustomerService } from 'src/customer/customer.service';
 import { LobbyService } from 'src/lobby/lobby.service';
 import { LobbyIncludedLobType } from 'src/lobby/lobby.interface';
