@@ -13,7 +13,15 @@ export class HttpExceptionFilter implements ExceptionFilter {
       ? exception.getStatus()
       : HttpStatus.INTERNAL_SERVER_ERROR;
 
-    const responseData = exception.getResponse();
+
+    let responseData;
+    console.log(exception)
+    if(typeof (exception?.getResponse) === 'function') {
+      responseData = exception?.getResponse();
+    }
+    else {
+      responseData = { message: 'server error' };
+    }
 
     console.log(responseData);
 

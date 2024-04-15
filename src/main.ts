@@ -21,9 +21,9 @@ async function bootstrap() {
     new PrismaClientExceptionFilter(httpAdapter)
   ) 
   
-  // const configService = app.get(ConfigService);
+  const configService = app.get(ConfigService);
 
-  const port = 8000
+  const PORT = 8000;
 
   app.enableCors({ credentials: true, origin: true });
 
@@ -31,7 +31,8 @@ async function bootstrap() {
 
   app.use(cookieParser());
 
-  app.setGlobalPrefix('api/v1');
+  const PREFIX = configService.get<string>('PREFIX');
+  app.setGlobalPrefix(PREFIX);
 
   app.useGlobalPipes(
     new ValidationPipe({
@@ -41,7 +42,7 @@ async function bootstrap() {
     }),
   );
   app.use(helmet());
-  logger.log(`Starting server on port ${port}`);
-  await app.listen(port);
+  logger.log(`Starting server on port ${PORT}`);
+  await app.listen(PORT);
 }
 bootstrap();
