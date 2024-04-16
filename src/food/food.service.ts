@@ -16,6 +16,9 @@ export class FoodService {
   async findAllFood() {
     try {
       const foods = await this.prisma.food.findMany({
+        where: {
+          deleted_at: null
+        },
         include: {
           foodFiles: {
             orderBy: {
@@ -35,12 +38,15 @@ export class FoodService {
     }
   }
 
-  async findFoodByID(id:string) {
+  async findFoodByID(id:string):Promise<FoodInterFace> {
     try {
-      const food = await this.prisma.food.findUnique({
+      const food = await this.prisma.food.findFirst({
         where: {
-          id: id
-        },
+         AND: [
+          { id: id,},
+          { deleted_at: null,},
+        ],
+        } as any,
         include: {
           foodFiles: {
             orderBy: {
@@ -65,10 +71,15 @@ export class FoodService {
 
     const imageURL = `${BASEURL}${PREFIX}/file/`
     const result = foods.map(food => {
-      const { foodFiles, ...foodData } = food;
-      const url = foodFiles.length > 0 ? imageURL + foodFiles[0].image.file_name : null;
 
-      return { ...foodData, url };
+      if(food?.foodFiles) {
+        const { foodFiles, ...foodData } = food;
+        const url = foodFiles.length > 0 ? imageURL + foodFiles[0].image.file_name : null;
+
+        return {...foodData, url}
+      }
+
+      return food;
     });
 
     return result;
@@ -123,7 +134,10 @@ export class FoodService {
       if(!food) throw new NotFoundException(`food id: ${id} not found`)
       
 
-      const deletedFood = await this.prisma.food.delete({
+      const deletedFood = await this.prisma.food.update({
+        data: {
+          deleted_at: new Date()
+        },
         where: {
           id: id
         }

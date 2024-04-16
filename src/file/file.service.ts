@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer-options.interface';
 import * as multer from 'multer';
@@ -19,6 +19,10 @@ export class FileService {
 
   async storageFoodImage(filename:string, food_id:string) {
     try {
+
+      if(!filename) throw new BadRequestException("missing filename") 
+      if(!food_id) throw new BadRequestException("missing food_id") 
+        
       const file = await this.prisma.image.create({
         data: { file_name: filename} as any,
       })

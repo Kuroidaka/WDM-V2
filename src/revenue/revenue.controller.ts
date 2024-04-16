@@ -13,7 +13,7 @@ export class RevenueController {
     return this.revenueService.getMonRevenue(Number(month), Number(year));
   }
 
-  @Get()
+  @Get('total')
   async getTotalRevenue() {
     return this.revenueService.getTotalRevenue();
   }

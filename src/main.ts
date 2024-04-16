@@ -41,7 +41,9 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-  app.use(helmet());
+
+  // Due to this the img stream is not working
+  // app.use(helmet()); 
   logger.log(`Starting server on port ${PORT}`);
   await app.listen(PORT);
 }

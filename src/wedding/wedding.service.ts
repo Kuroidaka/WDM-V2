@@ -284,7 +284,7 @@ export class WeddingService {
         for (const food of foods) {
           // check exist food
           const foodID = food.id
-          const foodData:FoodInterFace = await this.foodService.findFoodByID(foodID)
+          const foodData:any = await this.foodService.findFoodByID(foodID)
           if(!foodData) {
             errorFoodList.push(`Not found any data for food with ID:${foodID}`);
             continue;

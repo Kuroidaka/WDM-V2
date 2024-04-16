@@ -42,7 +42,8 @@ export class RevenueService {
       const estimateRevenue = weddingData.reduce((total, data) => {
         let estimatePrice = 0;
         const weddingDate = data["wedding_date"];
-        const totalPrice = data["Bill"][0]["total_price"];
+        
+        const totalPrice = data["Bill"].length > 0 ? data["Bill"][0]["total_price"] : 0;
         if (data["is_penalty_mode"]) {
           const penalData = calcPenalty(weddingDate, new Date(), totalPrice);
           if (penalData.isPenal) {

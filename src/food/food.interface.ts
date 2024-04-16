@@ -7,6 +7,8 @@ export interface FoodInterFace {
   status: boolean;
   created_at: Date;
   updated_at: Date;
+  deleted_at: Date | null;
   inventory: number;
   foodFiles?: FoodLinkImage[];
+  url?: string
 }

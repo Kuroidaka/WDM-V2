@@ -35,7 +35,7 @@ export class FoodController {
     return this.foodService.updateFood(foodID, updateData)
   }
 
-  @Delete('/:foodID')//delete food
+  @Patch('delete/:foodID')//delete food
   async deleteFood(@Param() param:{foodID:string}) {
    const { foodID } = param;
    
