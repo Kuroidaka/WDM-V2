@@ -13,7 +13,7 @@ VALUES
 ;
 
 -- ============================
--- INIT ROLES
+-- INIT ROLESs
 -- ============================
 INSERT INTO Role (id, name, created_at, updated_at)
 VALUES
@@ -55,6 +55,22 @@ VALUES
     '$2a$10$BQ3PJs7iCxr.UNFHVnAoBeP0.QKp04kzc7/YwpSB/gx0ygPeFG5NO',
     NOW(),
     NOW()
+),
+(
+    'JIrWE1qRjTxBWzeFwIGPT',
+    'Quy Khung',
+    'test1',
+    '$2a$10$BQ3PJs7iCxr.UNFHVnAoBeP0.QKp04kzc7/YwpSB/gx0ygPeFG5NO',
+    NOW(),
+    NOW()
+),
+(
+    'JIrWE1qRjTxBWzeFwIGPM',
+    'Minh Tue',
+    'test2',
+    '$2a$10$BQ3PJs7iCxr.UNFHVnAoBeP0.QKp04kzc7/YwpSB/gx0ygPeFG5NO',
+    NOW(),
+    NOW()
 );
 
 -- ============================
@@ -71,6 +87,18 @@ INSERT INTO `UserRole`
 VALUES
 (
     'JIrWE1qRjTxBWzeFwIGGL',
+    'c5a5b477-73f5-4a97-b657-b2fd7a8efaae',
+    '2024-03-21 04:22:05.578',
+    '2024-03-21 04:22:05.578'
+),
+(
+    'JIrWE1qRjTxBWzeFwIGPM',
+    '64007797-029d-4339-b78b-d51e2d2f3e1a',
+    '2024-03-21 04:22:05.578',
+    '2024-03-21 04:22:05.578'
+),
+(
+    'JIrWE1qRjTxBWzeFwIGPT',
     'c5a5b477-73f5-4a97-b657-b2fd7a8efaae',
     '2024-03-21 04:22:05.578',
     '2024-03-21 04:22:05.578'
