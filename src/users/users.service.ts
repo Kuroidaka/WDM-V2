@@ -1,3 +1,4 @@
+import { PrivilegeService } from 'src/privilege/privilege.service';
 import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { User } from '@prisma/client';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -8,7 +9,10 @@ import { UpdateUserDto } from './dto/update_user.dto';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma:PrismaService) {}
+  constructor(
+    private prisma:PrismaService,
+    private privilegeService:PrivilegeService,
+  ) {}
 
   async getUsers(): Promise<Array<Omit<User, 'UserRole'> & { PermissionList: Permission[] }>> {
     const usersData = await this.prisma.user.findMany({
@@ -155,4 +159,15 @@ export class UsersService {
     }
   }
 
+  async deleteUser(id:string) {
+    try {
+      await this.privilegeService.deleteUserRole(id)
+      await this.prisma.user.delete({
+        where: { id }
+      })
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 }

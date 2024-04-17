@@ -263,6 +263,17 @@ export class PrivilegeService {
     }
   }
 
+  async deleteUserRole(user_id:string) {
+    try {
+      await this.prisma.userRole.deleteMany({
+        where: { user_id }
+      })
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async template() {
     try {
       

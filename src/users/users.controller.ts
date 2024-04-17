@@ -28,4 +28,8 @@ export class UsersController {
     return this.userService.updateUser(id, display_name);
   }
 
+  @Delete('/:id/delete')
+  async deleteUser(@Param('id') id:string){
+    return this.userService.deleteUser(id);
+  }
 }
