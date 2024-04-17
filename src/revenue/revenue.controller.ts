@@ -5,6 +5,11 @@ import { Body, Controller, Get, Query } from '@nestjs/common';
 export class RevenueController {
   constructor(private revenueService:RevenueService) {}
 
+  @Get('list-revenue')
+  async getListBill() {
+    return this.revenueService.getListRevenue();
+  }
+
   @Get()
   async getMonRevenue(
     @Query('year') year:string, 

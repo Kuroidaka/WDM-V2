@@ -15,9 +15,48 @@ export class RevenueService {
 
   ) {}
 
-  async getListRevenue() {
+
+
+  async getListRevenue() { //junk function for the frontend
     try {
-            
+      const revenueSplitByDate = []
+      const billData = await this.billService.getBills()
+
+      billData.forEach((bill) => {
+        const originalDate = bill['payment_date'].toISOString().split("T")[0]
+        const parts = originalDate.split("-");  // ['2024', '04', '17']
+        const date = `${parts[2]}-${parts[1]}-${parts[0]}`;  // '17-04-2024'
+        const index = revenueSplitByDate.findIndex(data => data?.day === date)
+        if(index !== -1) {
+          revenueSplitByDate[index].revenue += bill.total_price;
+        } else {
+          revenueSplitByDate.push({
+            day: date,
+            revenue: bill.total_price,
+            weddingnumber: 0
+          })
+        }
+      })
+
+      const weddingData = await this.weddingService.getWeddings()
+
+      weddingData.forEach((wedding) => {
+        const originalDate = wedding['created_at'].toISOString().split("T")[0]
+        const parts = originalDate.split("-");  // ['2024', '04', '17']
+        const date = `${parts[2]}-${parts[1]}-${parts[0]}`;  // '17-04-2024'
+        const index = revenueSplitByDate.findIndex(data => data?.day === date)
+        if(index !== -1) {
+          revenueSplitByDate[index].weddingnumber += 1;
+        } else {
+          revenueSplitByDate.push({
+            day: date,
+            revenue: 0,
+            weddingnumber: 1
+          })
+        }
+      })
+
+      return revenueSplitByDate
     } catch (error) {
       console.log(error);
       throw error;
@@ -140,6 +179,16 @@ export class RevenueService {
 
     // console.log(weddingSplitByDate)
     return weddingSplitByDate
+  }
+
+  sortRevenueByDate (bills:BillInterface[]) {
+    const revenueSplitByDate = []
+
+  
+
+
+    // console.log(revenueSplitByDate)
+    return revenueSplitByDate
   }
 
   async temp() {

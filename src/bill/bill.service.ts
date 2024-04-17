@@ -8,7 +8,11 @@ export class BillService {
 
   async getBills() {
     try {
-      const bills = await this.prisma.bill.findMany()
+      const bills = await this.prisma.bill.findMany({
+        orderBy: {
+          created_at: 'asc'
+        }
+      })
       return bills
     } catch (error) {
       console.log(error);
