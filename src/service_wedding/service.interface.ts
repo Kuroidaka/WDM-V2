@@ -10,4 +10,5 @@ export interface ServiceInterFace {
   deleted_at: Date | null;
   inventory: number;
   serviceFiles?: ServiceLinkImage[];
+  url?: string
 }

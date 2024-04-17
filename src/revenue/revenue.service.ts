@@ -15,6 +15,15 @@ export class RevenueService {
 
   ) {}
 
+  async getListRevenue() {
+    try {
+            
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async getTotalRevenue() {
     try {
       const finalData:{
@@ -122,9 +131,10 @@ export class RevenueService {
 
       const date = wedding['wedding_date'].toISOString().split("T")[0]
       if(weddingSplitByDate[date]) {
-        weddingSplitByDate[date][wedding.shift] = wedding;
+        weddingSplitByDate[date][wedding.shift] = []
+        weddingSplitByDate[date][wedding.shift].push(wedding);
       } else {
-        weddingSplitByDate[date] = { [wedding.shift]: wedding  }
+        weddingSplitByDate[date] = { [wedding.shift]: [wedding]  }
       }
     })
 

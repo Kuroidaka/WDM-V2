@@ -19,9 +19,9 @@ export class WeddingController {
     return this.weddingService.getWeddingById({id: weddingId, bill});
   }
 
-  @Get('list')
-  async getWedding() {
-    return this.weddingService.getWeddings();
+  @Get()
+  async getWedding(@Query('bill') bill=false) {
+    return this.weddingService.getWeddings(bill);
   }
 
   @Post('create/wedding')

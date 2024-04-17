@@ -15,6 +15,9 @@ export class ServiceWeddingService {
   async findServices():Promise<ServiceInterFace[] | undefined> {
     try {
       const services = await this.prisma.service.findMany({
+        where: {
+          deleted_at: null
+        },
         include: {
           serviceFiles: {
             orderBy: {
@@ -59,10 +62,14 @@ export class ServiceWeddingService {
 
     const imageURL = `${BASEURL}${PREFIX}/file/`
     const result = services.map(service => {
-      const { serviceFiles, ...serviceData } = service;
-      const url = serviceFiles.length > 0 ? imageURL + serviceFiles[0].image.file_name : null;
+      if(service?.serviceFiles){
+        const { serviceFiles, ...serviceData } = service;
+        const url = serviceFiles.length > 0 ? imageURL + serviceFiles[0].image.file_name : null;
+  
+        return { ...serviceData, url };
+      }
 
-      return { ...serviceData, url };
+      return service
     });
 
     return result;
@@ -117,7 +124,10 @@ export class ServiceWeddingService {
       const service = await this.findServiceByID(id);
       if(!service) throw new NotFoundException(`service id: ${id} not found`)
 
-      const deletedService = await this.prisma.service.delete({
+      const deletedService = await this.prisma.service.update({
+        data: {
+          deleted_at: new Date()
+        },
         where: {
           id: id
         }
@@ -132,4 +142,18 @@ export class ServiceWeddingService {
     }
   }
 
+  async updateInventory(id:string, count:number) {
+    try {
+      const service = await this.prisma.service.update({
+        where: { id },
+        data: { inventory: count,},
+      });
+    return service
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
 }
+

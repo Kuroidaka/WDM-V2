@@ -43,6 +43,9 @@ export class FileService {
 
   async storageServiceImage(filename:string, service_id:string) {
     try {
+      if(!filename) throw new BadRequestException("missing filename") 
+      if(!service_id) throw new BadRequestException("missing service_id") 
+
       const file = await this.prisma.image.create({
         data: { file_name: filename} as any,
       })

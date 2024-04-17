@@ -34,7 +34,7 @@ export class ServiceWeddingController {
     return this.serviceWeddingService.updateService(serviceID, updateData)
   }
 
-  @Delete('/:serviceID')//delete service
+  @Patch('delete/:serviceID')//delete service
   async deleteService(@Param() param:{serviceID:string}) {
    const { serviceID } = param;
    

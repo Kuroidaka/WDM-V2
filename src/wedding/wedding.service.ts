@@ -106,6 +106,7 @@ export class WeddingService {
       }
 
       const weddingData = await this.prisma.wedding.findMany(queryObject);
+      console.log(weddingData)
       const weddingList = weddingData.map(data => {
         if(data.Bill.length > 0) {
             if(data.Bill[0]["remain_amount"] <= 0)
@@ -114,7 +115,7 @@ export class WeddingService {
         }
         return {...data, status: "pending"} 
       })
-
+      
       return weddingList;
     } catch (error) {
       console.log(error);
