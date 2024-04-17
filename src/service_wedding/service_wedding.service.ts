@@ -12,6 +12,35 @@ export class ServiceWeddingService {
     private configService:ConfigService
   ) {}
 
+  async findServiceByNameLike(name:string):Promise<ServiceInterFace[]> {
+    try {
+      const services = await this.prisma.service.findMany({
+        where: {
+         AND: [
+          { name: { contains: name,},},
+          { deleted_at: null,},
+        ],
+        } as any,
+        include: {
+          serviceFiles: {
+            orderBy: {
+              created_at: 'desc'
+            },
+            include: {
+              image: true
+            }
+          }
+        }
+      });
+
+      console.log(services)
+
+    return this.processServiceImageUrl(services);
+    } catch (error) {
+      throw error
+    }
+  }
+
   async findServices():Promise<ServiceInterFace[] | undefined> {
     try {
       const services = await this.prisma.service.findMany({

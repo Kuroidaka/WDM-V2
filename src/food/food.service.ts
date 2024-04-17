@@ -65,6 +65,36 @@ export class FoodService {
     }
   }
 
+  async findFoodByNameLike(name:string):Promise<FoodInterFace[]> {
+    try {
+      console.log("find food")
+      const foods = await this.prisma.food.findMany({
+        where: {
+         AND: [
+          { name: { contains: name,},},
+          { deleted_at: null,},
+        ],
+        } as any,
+        include: {
+          foodFiles: {
+            orderBy: {
+              created_at: 'desc'
+            },
+            include: {
+              image: true
+            }
+          }
+        }
+      });
+
+      console.log(foods)
+
+    return this.processFoodImageUrl(foods);
+    } catch (error) {
+      throw error
+    }
+  }
+
   processFoodImageUrl(foods:FoodInterFace[]) {
     const BASEURL = this.configService.get<string>('BASE_URL');
     const PREFIX = this.configService.get<string>('PREFIX');

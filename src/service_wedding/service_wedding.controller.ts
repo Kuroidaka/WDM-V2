@@ -2,7 +2,7 @@ import { PageAccess } from 'src/auth/page_access.decorator';
 import { CreateServiceDto } from './dto/create_service.dto';
 import { UpdateServiceDto } from './dto/update_service.dto';
 import { ServiceWeddingService } from './service_wedding.service';
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Query, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PageGuard } from 'src/auth/page.guard';
 
@@ -12,6 +12,10 @@ import { PageGuard } from 'src/auth/page.guard';
 export class ServiceWeddingController {
   constructor(private serviceWeddingService: ServiceWeddingService) {}
 
+  @Get('find')// Get All service
+  async findServiceByNameLike(@Query('q') name:string) {
+    return this.serviceWeddingService.findServiceByNameLike(name)
+  }
   @Get()// Get All service
   async getAllService() {
     return this.serviceWeddingService.findServices()

@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Query, Get, Param, Patch, Post, UseGuards, NotFoundException } from '@nestjs/common';
 import { FoodService } from './food.service';
 // import { PrismaClientExceptionFilter } from 'src/common/filters/prisma-exception.filter';
 import { UpdateFoodDto } from './dto/update_food.dto';
@@ -12,6 +12,13 @@ import { PageGuard } from 'src/auth/page.guard';
 @Controller('food')
 export class FoodController {
   constructor(private foodService: FoodService) {}
+
+
+  @Get('find')// get food by name
+  async findFoodByNameLike(@Query('q') name: string) {
+
+    return this.foodService.findFoodByNameLike(name)
+  }
 
   @Get()// Get All Food
   async getAllFood() {
