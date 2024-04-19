@@ -7,6 +7,9 @@ export class CreateBillDto {
   
   @IsNumber()
   service_total_price:number;
+
+  @IsNumber()
+  food_total_price:number;
   
   @IsNumber()
   total_price:number;

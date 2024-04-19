@@ -645,6 +645,7 @@ export class WeddingService {
       await this.billService.createBill({
         wedding_id: weddingId,
         service_total_price: servicePrice,
+        food_total_price: foodPrice,
         total_price: totalPrice,
         deposit_require: deposit,
         deposit_amount: transactionAmount,
@@ -736,6 +737,7 @@ export class WeddingService {
       await this.billService.createBill({
         wedding_id: weddingId,
         service_total_price: servicePrice,
+        food_total_price: foodPrice,
         total_price: totalPrice,
         deposit_require: deposit,
         deposit_amount: transactionAmount,
