@@ -86,11 +86,19 @@ export class WeddingService {
         include: {
           Bill?: any,
           Customer: boolean,
+          Lobby: {
+            include: {  LobType: boolean, }
+          }
         }
       } = {
         include: {
           Bill: true,
           Customer: true,
+          Lobby: {
+            include: {
+              LobType: true
+            }
+          }
         }
       };
 
@@ -127,13 +135,29 @@ export class WeddingService {
     try {
       let queryObject:{
         where: { id:string,},
-        include?: any,
+        include?: {
+          Bill?: any,
+          Customer: boolean,
+          Lobby: {
+            include: {  LobType: boolean, }
+          }
+        },
       } = { 
         where: { id, },
+        include: {
+          Bill: true,
+          Customer: true,
+          Lobby: {
+            include: {
+              LobType: true
+            }
+          }
+        }
       }
 
       if(bill) {
         queryObject = { ...queryObject, include: {
+          ...queryObject.include,
           Bill: {
             orderBy: {
                 "created_at": 'desc'
