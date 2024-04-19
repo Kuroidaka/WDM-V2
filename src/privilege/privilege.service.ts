@@ -296,6 +296,12 @@ export class PrivilegeService {
 
       if(!roleExistCheck) throw new NotFoundException('role is not exist');
 
+      const findUser = await this.prisma.user.findUnique({
+        where: { id: userID, },
+      })
+
+      if(!findUser) throw new NotFoundException(`User not found for id: ${userID}`)
+
       // check user id have the role id
       const userRoleCheck = await this.prisma.userRole.findMany({
         where: {
