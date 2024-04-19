@@ -62,6 +62,7 @@ export class BillService {
       const {
         wedding_id,
         service_total_price,
+        food_total_price,
         total_price,
         deposit_require,
         deposit_amount,
@@ -73,6 +74,7 @@ export class BillService {
             wedding_id,
             payment_date: new Date(),
             service_total_price,
+            food_total_price,
             total_price,
             deposit_require,
             deposit_amount,
