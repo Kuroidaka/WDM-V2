@@ -30,11 +30,18 @@ export class AuthController {
     return this.authService.register(body);
   }
 
-  @Patch('/change-password')
-  async changePassword (@Body() body:{username:string, password:string, oldPassword:string}) {
-    const { username, password, oldPassword } = body;
+  // @Patch('/change-password')
+  // async changePassword (@Body() body:{username:string, password:string, oldPassword:string}) {
+  //   const { username, password, oldPassword } = body;
 
-    return this.authService.changePassword(username, password, oldPassword);
+  //   return this.authService.changePassword(username, password, oldPassword);
+  // }
+
+  @Patch('/change-password')
+  async changePasswordByAdmin (@Body() body:{username:string, password:string}) {
+    const { username, password } = body;
+
+    return this.authService.changePasswordByAdmin(username, password);
   }
 
   @Get('check-permission/:userId')

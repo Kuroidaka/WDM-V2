@@ -107,4 +107,26 @@ export class AuthService {
     }
   }
 
+  async changePasswordByAdmin(username:string, password:string) {
+    try {
+
+      // find username
+      const user = await this.userService.findByUsername(username);
+      if(!user) throw new NotFoundException('Username not found')
+
+      // hash the password using bcrypt
+      const hashedPassword = await this.hashPassword(password);
+
+      // update passwrod
+      const newUser = this.prisma.user.update({
+        where: { username },
+        data: { password: hashedPassword }
+      });
+
+      return newUser
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
+  }
 }
