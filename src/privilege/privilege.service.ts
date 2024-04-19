@@ -189,6 +189,103 @@ export class PrivilegeService {
     }
   }
 
+  async updateRolePermissionByPage(roleID:string, page:string) {
+    try {
+      // check role existed from database
+      const roleData = await this.prisma.role.findUnique({
+        where: { id: roleID, },
+      })
+
+      if(!roleData) {
+        throw new BadRequestException("role is not existed");
+      }
+
+      // find permission by page
+      const findPermission = await this.prisma.permission.findUnique({
+        where: { page: page, } as any,
+      })
+
+      if(!findPermission) {
+        throw new NotFoundException('Page not found')
+      }
+
+      // check roleID have permissionID
+      const rolePermissionCheck = await this.prisma.rolePermission.findMany({
+        where: {
+          AND: [
+            { role_id: roleID, },
+            { permission_id: findPermission.id, },
+          ]
+        }
+      });
+
+      if(rolePermissionCheck.length > 0) {
+        throw new ConflictException(`Role ID: ${roleID} already have permission: ${findPermission.id}`);
+      }
+
+      const RolePermission = await this.prisma.rolePermission.create({
+          data: {
+              role_id: roleID,
+              permission_id: findPermission.id,
+          },
+      });
+
+
+      return RolePermission;
+
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
+  async removeRolePermissionByPage(roleID:string, page:string) {
+    try {
+      // check role existed from database
+      const roleData = await this.prisma.role.findUnique({
+        where: { id: roleID, },
+      })
+      if(!roleData) throw new BadRequestException("role is not existed");
+
+
+      // find permision by page 
+      const findPermission = await this.prisma.permission.findUnique({
+        where: { page: page, } as any,
+      })
+
+      if(!findPermission) {
+        throw new NotFoundException('Page not found')
+      }
+
+      const permissionID = findPermission.id;
+      // check roleID have permissionID
+      const rolePermissionCheck = await this.prisma.rolePermission.findMany({
+        where: {
+          AND: [
+            { role_id: roleID, },
+            { permission_id: permissionID, },
+          ]
+        }
+      });
+
+      if(rolePermissionCheck.length == 0) {
+        throw new ConflictException(`Role ID: ${roleID} Do not have permission: ${permissionID}`);
+      }
+
+      await this.prisma.rolePermission.delete({
+          where: {
+            role_id_permission_id: {
+              role_id: roleID,
+              permission_id: permissionID,
+            },
+          } as any,
+      });
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   async setUserRole(userID:string, roleID:string) {
     try {
       

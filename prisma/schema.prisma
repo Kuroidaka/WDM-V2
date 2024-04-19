@@ -87,9 +87,9 @@ model Lobby {
 
 model Permission {
   id             String           @id @default(uuid())
-  name           String
+  name           String          
   description    String?
-  page           Permission_page
+  page           Permission_page   @unique()
   created_at     DateTime         @default(now())
   updated_at     DateTime         @default(now())
   RolePermission RolePermission[]

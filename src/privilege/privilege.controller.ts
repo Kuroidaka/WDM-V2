@@ -40,12 +40,28 @@ export class PrivilegeController {
     return this.privilegeService.updateRolePermission(roleID, permissionID);
   }
 
+  @Post('role/update-by-name')
+  async updateRolePermissionByPage(
+    @Body('roleID') roleID:string,
+    @Body('page') page:string,
+  ) {
+    return this.privilegeService.updateRolePermissionByPage(roleID, page);
+  }
+
   @Delete('role/delete')
   async removeRolePermission(
     @Body('roleID') roleID:string,
     @Body('permissionID') permissionID:string,
   ) {
     return this.privilegeService.removeRolePermission(roleID, permissionID);
+  }
+
+  @Delete('role/delete-by-page')
+  async removeRolePermissionByPage(
+    @Body('roleID') roleID:string,
+    @Body('page') page:string,
+  ) {
+    return this.privilegeService.removeRolePermissionByPage(roleID, page);
   }
 
   @Post('role/user/update')
