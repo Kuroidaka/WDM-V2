@@ -6,13 +6,14 @@ import { createWeddingDto } from './create_wedding.dto';
 import { CustomerService } from 'src/customer/customer.service';
 import { LobbyService } from 'src/lobby/lobby.service';
 import { LobbyIncludedLobType } from 'src/lobby/lobby.interface';
-import { WeddingInterface, foodOrderWedding, serviceOrder } from './wedding.interface';
+import { WeddingInterface, foodOrderWedding, serviceOrder, serviceOrderWedding } from './wedding.interface';
 import { FoodService } from 'src/food/food.service';
 import { FoodInterFace } from 'src/food/food.interface';
 import { ServiceInterFace } from 'src/service_wedding/service.interface';
 import { calculateTimeDifference } from 'utils';
 import { BillService } from 'src/bill/bill.service';
 import { BillInterface } from 'src/bill/bill.interface';
+import { Bill, Wedding } from '@prisma/client';
 
 @Injectable()
 export class WeddingService {
@@ -37,6 +38,53 @@ export class WeddingService {
       throw error;
     }
   }
+
+  // Get Order services + foods
+  async getFoodsOrderByWedding(wedding_id:string) {
+    try {
+
+      // check wedding exist 
+      const check = await this.getWeddingById({id: wedding_id});
+      if(!check) throw new NotFoundException(`Wedding not found for id: ${wedding_id}`)
+
+      const foods = await this.prisma.foodOrder.findMany({
+        where: {
+          wedding_id
+        }
+      })
+
+      return this.cleanObjectOrderResponse(foods)
+
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+  async getServicesOrderByWedding(wedding_id:string) {
+    try {
+      // check wedding exist 
+      const check = await this.getWeddingById({id: wedding_id});
+      if(!check) throw new NotFoundException(`Wedding not found for id: ${wedding_id}`)
+
+      const service = await this.prisma.serviceOrder.findMany({
+        where: { wedding_id }
+      })
+
+      return this.cleanObjectOrderResponse(service);
+
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+  cleanObjectOrderResponse(OrderList:(serviceOrderWedding[] | foodOrderWedding[])) {
+    return OrderList.map(order => {
+      const { id, wedding_id, ...dataOrder } = order;
+      
+      return dataOrder
+    })
+  }
+
 
   async getMonthWedding(month:number, year:number) {
     try {
@@ -145,7 +193,6 @@ export class WeddingService {
       } = { 
         where: { id, },
         include: {
-          Bill: true,
           Customer: true,
           Lobby: {
             include: {
@@ -397,6 +444,79 @@ export class WeddingService {
       throw error;
     }
   }
+  async editFoodOrderForWedding(weddingId:string, foods:{id:string, count:number}[]) {
+    try {
+      // check exist weeding 
+      const checkWedding = await this.getWeddingById({id:weddingId});
+      if(!checkWedding) throw new NotFoundException(`Wedding not found for id: ${weddingId}`)
+        
+      await this.orderFood(weddingId, foods);
+
+      let finalData:{
+        extraFee?: number,
+        totalPrice?: number,
+        weddingData?: WeddingInterface,
+        remainPrice?: number,
+        foodPrice?: number,
+        servicePrice?: number,
+      } = {}
+      // calc price
+      const { foodPrice, servicePrice, totalPrice } = await this.preparePriceForPayment(weddingId);
+      // Get data wedding
+      const weddingData = await this.getWeddingById({id: weddingId});
+      if(!weddingData) throw new NotFoundException(`No wedding data id: ${weddingId}`);
+      const weddingDate = new Date(weddingData.wedding_date);
+      const isPenalty = weddingData["is_penalty_mode"]
+      const deposit = await this.getDeposit(weddingId)
+
+      // Get penalty 
+      const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate);
+      /*=============
+      PREVIOUS DEPOSIT
+      ===============*/
+
+      // check exist bill
+      const bills = await this.billService.getBillsByWeddingId(weddingId);
+  
+
+      // calculate remain price
+      const { remainPrice, newTotalPrice } = await this.calculateRemainPriceForEdit({
+        bills,
+        isPenalty,
+        extraFee,
+        totalPrice,
+        weddingId
+      })
+
+       // final data
+      finalData = {
+        totalPrice,
+        remainPrice,
+        foodPrice,
+        servicePrice,
+        extraFee,
+        weddingData,
+      }
+
+      // create bill
+      await this.billService.createBill({
+        wedding_id: weddingId,
+        service_total_price: servicePrice,
+        food_total_price: foodPrice,
+        total_price: totalPrice,
+        deposit_require: deposit,
+        deposit_amount: 0,
+        remain_amount: remainPrice,
+        extra_fee: extraFee,
+      })
+
+
+      return finalData
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 
   // Service Order
   async orderService(weddingId:string, services:serviceOrder[]){
@@ -489,6 +609,79 @@ export class WeddingService {
       throw error;
     }
   }
+  async editServiceOrderForWedding(weddingId:string, services:{id:string, count:number}[]) {
+    try {
+      // check exist weeding 
+      const checkWedding = await this.getWeddingById({id:weddingId});
+      if(!checkWedding) throw new NotFoundException(`Wedding not found for id: ${weddingId}`)
+        
+      await this.orderService(weddingId, services);
+
+      let finalData:{
+        extraFee?: number,
+        totalPrice?: number,
+        weddingData?: WeddingInterface,
+        remainPrice?: number,
+        foodPrice?: number,
+        servicePrice?: number,
+      } = {}
+      // calc price
+      const { servicePrice, foodPrice, totalPrice } = await this.preparePriceForPayment(weddingId);
+      // Get data wedding
+      const weddingData = await this.getWeddingById({id: weddingId});
+      if(!weddingData) throw new NotFoundException(`No wedding data id: ${weddingId}`);
+      const weddingDate = new Date(weddingData.wedding_date);
+      const isPenalty = weddingData["is_penalty_mode"]
+      const deposit = await this.getDeposit(weddingId)
+
+      // Get penalty 
+      const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate);
+      /*=============
+      PREVIOUS DEPOSIT
+      ===============*/
+
+      // check exist bill
+      const bills = await this.billService.getBillsByWeddingId(weddingId);
+  
+
+      // calculate remain price
+      const { remainPrice, newTotalPrice } = await this.calculateRemainPriceForEdit({
+        bills,
+        isPenalty,
+        extraFee,
+        totalPrice,
+        weddingId
+      })
+
+       // final data
+      finalData = {
+        totalPrice,
+        remainPrice,
+        servicePrice,
+        foodPrice,
+        extraFee,
+        weddingData,
+      }
+
+      // create bill
+      await this.billService.createBill({
+        wedding_id: weddingId,
+        service_total_price: servicePrice,
+        food_total_price: foodPrice,
+        total_price: totalPrice,
+        deposit_require: deposit,
+        deposit_amount: 0,
+        remain_amount: remainPrice,
+        extra_fee: extraFee,
+      })
+
+
+      return finalData
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 
   async modifyInventory(foodList:foodOrderWedding[]) {
 
@@ -552,6 +745,30 @@ export class WeddingService {
     return extraFee;
   }
 
+  async getCurrentDepositForWedding(weddingID:string) {
+    try {
+      const weddingData = await this.prisma.wedding.findUnique({
+        where: { id: weddingID, },
+        include: { Bill: true, },
+      }) as Wedding & { Bill: Bill[] };
+
+      if(!weddingData) throw new NotFoundException(`Wedding not found for id: ${weddingID}`)
+
+      if (weddingData.Bill) {
+          let totalDeposit = 0;
+        weddingData.Bill.forEach(bill => {
+          totalDeposit += bill.deposit_amount;
+        });
+        return totalDeposit;
+      }
+
+      return 0
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   calculateRemainPrice ({
     bills,
     isPenalty,
@@ -565,23 +782,24 @@ export class WeddingService {
     totalPrice:number,
     transactionAmount?:number,
   }):{
-    remainPrice: (number | string),
+    remainPrice: number | null,
     newTotalPrice?: number
   } {
     const recentBill = bills[0]
     let remainPrice = 0;
     let newTotalPrice = 0
     if(bills.length > 0) { //deposit before
+
       if(recentBill['remain_amount'] <= 0) {
-        return { remainPrice: 'your bill have been fully paid' };
+        return { remainPrice: null };
       }
 
       newTotalPrice = recentBill['remain_amount']
       // calc remain price
-      if(!isPenalty && recentBill["extra_fee"] > 0) {
+      if(!isPenalty && recentBill["extra_fee"] > 0) { // Turn off penalty
         newTotalPrice -= recentBill["extra_fee"] 
       }
-      else if(isPenalty && recentBill["extra_fee"] === 0) {
+      else if(isPenalty && recentBill["extra_fee"] === 0) { // Turn on penalty
         newTotalPrice += extraFee 
       }
       remainPrice = newTotalPrice - transactionAmount
@@ -600,32 +818,118 @@ export class WeddingService {
       newTotalPrice
     }
   }
+  async calculateRemainPriceForEdit ({
+    bills,
+    isPenalty,
+    extraFee,
+    totalPrice,
+    weddingId
+  }: {
+    bills:BillInterface[],
+    isPenalty:boolean,
+    extraFee:number,
+    totalPrice:number,
+    transactionAmount?:number,
+    weddingId:string,
+  }): Promise<{ remainPrice: number | null, newTotalPrice?: number}> {
+    const recentBill = bills[0]
+    let remainPrice = 0;
+    let newTotalPrice = 0
+    if(bills.length > 0) { //deposit before
+      const depositUptoNow = await this.getCurrentDepositForWedding(weddingId);
+      // calc remain price
+      if(!isPenalty && recentBill["extra_fee"] > 0 || !isPenalty) { // Turn off penalty
+        remainPrice = totalPrice - depositUptoNow;
+      }
+      else if(isPenalty && recentBill["extra_fee"] === 0 || isPenalty) { // Turn on penalty
+        remainPrice = totalPrice + extraFee - depositUptoNow
+      }
+    }
+    else { //first time payment (no deposit before)
+      // calc remain price
+      newTotalPrice = totalPrice
+      if(isPenalty) {
+        newTotalPrice = totalPrice + extraFee 
+      } 
+      remainPrice = newTotalPrice
+    }
 
+    return {
+      remainPrice: remainPrice,
+      newTotalPrice
+    }
+  }
+
+  // Deposit
+  // async processDataForNewBill(
+  //   transactionAmount:number,
+  //   weddingId:string
+  // ):Promise<{ extraFee?: number; totalPrice?: number; weddingData?: WeddingInterface; deposit_amount?: number; remain?: number; foodPrice?: number; servicePrice?: number; newTotalPrice?: number; }>
+  // {
+  //   try {
+      
+      
+  //     // final data
+  //     finalData = {
+  //       totalPrice: totalPrice,
+  //       weddingData: dataWeeding,
+  //       deposit_amount: transactionAmount,
+  //       remain: remainPrice,
+  //       foodPrice: foodPrice,
+  //       servicePrice: servicePrice,
+  //       extraFee
+  //     }
+
+  //     return finalData
+
+  //     // if(remainPrice === null) {
+  //     //   return { msg: `Your bill have been fully paid` }
+  //     // }
+
+  //     // // create bill
+  //     // await this.billService.createBill({
+  //     //   wedding_id: weddingId,
+  //     //   service_total_price: servicePrice,
+  //     //   food_total_price: foodPrice,
+  //     //   total_price: totalPrice,
+  //     //   deposit_require: deposit,
+  //     //   deposit_amount: transactionAmount,
+  //     //   remain_amount: remainPrice,
+  //     //   extra_fee: extraFee,
+  //     // })
+
+
+  //     // return finalData;
+
+  //   } catch (error) {
+  //     console.log(error);
+  //     throw error;
+  //   }
+  // }
   // Deposit
   async depositOrder(
     transactionAmount:number,
     weddingId:string
   ) {
     try {
-      
+     
       let finalData:{
         extraFee?: number,
         totalPrice?: number,
         weddingData?: WeddingInterface,
         deposit_amount?: number,
-        remain?: number,
+        remainPrice?: number,
         foodPrice?: number,
         servicePrice?: number,
       } = {}
       // calc price
       const { foodPrice, servicePrice, totalPrice } = await this.preparePriceForPayment(weddingId);
       // Get data wedding
-      const dataWeeding = await this.getWeddingById({id: weddingId});
-      if(!dataWeeding) throw new NotFoundException(`No wedding data id: ${weddingId}`);
-      const weddingDate = new Date(dataWeeding.wedding_date);
-      const isPenalty = dataWeeding["is_penalty_mode"]
+      const weddingData = await this.getWeddingById({id: weddingId, bill:true});
+      if(!weddingData) throw new NotFoundException(`No wedding data id: ${weddingId}`);
+      const weddingDate = new Date(weddingData.wedding_date);
+      const isPenalty = weddingData["is_penalty_mode"]
       const deposit = await this.getDeposit(weddingId)
-      const depositRequire = deposit * totalPrice / 100
 
       // Get penalty 
       const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate);
@@ -637,31 +941,32 @@ export class WeddingService {
       const bills = await this.billService.getBillsByWeddingId(weddingId);
 
       // calculate remain price
-      const { remainPrice } = this.calculateRemainPrice({
+      const { remainPrice, newTotalPrice } = this.calculateRemainPrice({
         bills,
         isPenalty: isPenalty,
         extraFee,
         totalPrice,
         transactionAmount
       })
-      if(typeof remainPrice === 'string') {
-        return { msg: remainPrice }
+
+      if(remainPrice === null) {
+        return { msg: `Your bill have been fully paid` }
       }
 
       // deposit
+      const depositRequire = deposit * totalPrice / 100
       if(transactionAmount < depositRequire) {
         throw new UnprocessableEntityException(`deposit amount for this lobby need to be ${deposit}% <=> ${depositRequire}`);
       }
 
       // final data
       finalData = {
-        ...finalData,
-        totalPrice: totalPrice,
-        weddingData: dataWeeding,
-        "deposit_amount": transactionAmount,
-        "remain": remainPrice,
-        "foodPrice": foodPrice,
-        "servicePrice": servicePrice,
+        totalPrice,
+        weddingData,
+        deposit_amount:transactionAmount,
+        remainPrice,
+        foodPrice,
+        servicePrice,
         extraFee
       }
 
@@ -705,7 +1010,7 @@ export class WeddingService {
       // calc price
       const { foodPrice, servicePrice, totalPrice } = await this.preparePriceForPayment(weddingId);
       // Get data wedding
-      const dataWeeding = await this.getWeddingById({id: weddingId});
+      const dataWeeding = await this.getWeddingById({id: weddingId, bill:true});
       if(!dataWeeding) throw new NotFoundException(`No wedding data id: ${weddingId}`);
 
       const weddingDate = new Date(dataWeeding.wedding_date);
@@ -729,7 +1034,7 @@ export class WeddingService {
         totalPrice,
         transactionAmount
       })
-      if(typeof remainPrice === 'string') {
+      if(remainPrice < 0) {
         return { msg: remainPrice }
       }
       

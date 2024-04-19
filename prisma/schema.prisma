@@ -134,6 +134,7 @@ model ServiceOrder {
   service_id    String
   service_name  String
   service_price Int
+  note          String?
   count         Int
   created_at    DateTime @default(now())
   updated_at    DateTime @default(now())

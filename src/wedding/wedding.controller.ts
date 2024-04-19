@@ -36,6 +36,13 @@ export class WeddingController {
   ) {
     return this.weddingService.orderFood(weddingId, foods);
   }
+  @Post('update/wedding/food')
+  async editFoodOrderForWedding(
+    @Body('foods') foods:{id:string, count:number}[],
+    @Body('weddingId') weddingId:string
+  ) {
+    return this.weddingService.editFoodOrderForWedding(weddingId, foods);
+  }
 
   @Post('create/wedding/service')
   async orderService(
@@ -43,6 +50,13 @@ export class WeddingController {
     @Body('weddingId') weddingId:string
   ) {
     return this.weddingService.orderService(weddingId, services);
+  }
+  @Post('update/wedding/service')
+  async editServiceOrderForWedding(
+    @Body('services') services:{id:string, count:number}[],
+    @Body('weddingId') weddingId:string
+  ) {
+    return this.weddingService.editServiceOrderForWedding(weddingId, services);
   }
 
   @Post('deposit')
@@ -64,6 +78,21 @@ export class WeddingController {
   @Patch('toggle-penalty')
   async togglePenalty(@Query('weddingId') weddingId:string) {
     return this.weddingService.togglePenalty(weddingId);
+  }
+
+  @Get('get/food-order')
+  async getFoodsOrderByWedding(@Query('weddingId') weddingId:string) {
+    return this.weddingService.getFoodsOrderByWedding(weddingId);
+  }
+
+  @Get('get/service-order')
+  async getServicesOrderByWedding(@Query('weddingId') weddingId:string) {
+    return this.weddingService.getServicesOrderByWedding(weddingId);
+  }
+
+  @Get('/total-deposit/:weddingId')
+  async getCurrentDepositForWedding(@Param('weddingId') weddingId:string) {
+    return this.weddingService.getCurrentDepositForWedding(weddingId);
   }
 
 }
