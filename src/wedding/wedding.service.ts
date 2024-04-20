@@ -1,19 +1,21 @@
+import { CustomerInterface } from './../customer/customer.interface';
 import { ServiceWeddingService } from './../service_wedding/service_wedding.service';
 
 import { BadGatewayException, BadRequestException, ConflictException, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { createWeddingDto } from './create_wedding.dto';
+import { createWeddingDto } from './dto/create_wedding.dto';
 import { CustomerService } from 'src/customer/customer.service';
 import { LobbyService } from 'src/lobby/lobby.service';
 import { LobbyIncludedLobType } from 'src/lobby/lobby.interface';
-import { WeddingInterface, foodOrderWedding, serviceOrder, serviceOrderWedding } from './wedding.interface';
+import { WeddingInterface, WeddingUpdateInterface, foodOrderWedding, serviceOrder, serviceOrderWedding } from './wedding.interface';
 import { FoodService } from 'src/food/food.service';
 import { FoodInterFace } from 'src/food/food.interface';
 import { ServiceInterFace } from 'src/service_wedding/service.interface';
 import { calculateTimeDifference } from 'utils';
 import { BillService } from 'src/bill/bill.service';
 import { BillInterface } from 'src/bill/bill.interface';
-import { Bill, Wedding } from '@prisma/client';
+import { Bill, Customer, Lobby, Wedding } from '@prisma/client';
+import { updateWeddingDto } from './dto/update_wedding.dto';
 
 @Injectable()
 export class WeddingService {
@@ -281,6 +283,110 @@ export class WeddingService {
     }
   }
 
+  async updateWedding(weddingID:string, dataUpdate:updateWeddingDto) {
+    try {
+  
+      // check wedding exist
+      const oldWeddingData = await this.getWeddingById({id: weddingID}) as Wedding & { Lobby: Lobby } & { Customer: Customer };
+      if(!oldWeddingData) throw new NotFoundException(`Wedding not found for id: ${weddingID}`);
+
+      const objectUpdate: WeddingUpdateInterface = {}
+
+      // Check phone number exist
+      let customer:CustomerInterface = {}
+      if(dataUpdate?.phone && dataUpdate?.phone !== oldWeddingData.Customer.phone) {
+        const phone = dataUpdate.phone;
+        // Check exist customer with phone number
+        customer = await this.customerService.findByPhone(phone) as CustomerInterface;
+    
+        if(!customer) { //If customer with phone number is not exist 
+          const groom = dataUpdate?.groom || oldWeddingData.groom;
+          const bride = dataUpdate?.bride || oldWeddingData.bride;
+          
+          // create new customer
+          const name = `${groom}/${bride}`;
+          customer = await this.customerService.createCustomer(name, phone) as CustomerInterface;
+          objectUpdate.groom = groom;
+          objectUpdate.bride = bride;
+        }
+        else { // get data groom and bride from old found customer data follow phone number
+          objectUpdate.groom = customer.name.split('/')[0];
+          objectUpdate.bride = customer.name.split('/')[1];
+        }
+
+        objectUpdate.customer_id = customer.id;
+
+      }
+  
+      // valid lobby
+      let lobby_id = oldWeddingData?.lobby_id;
+      if(dataUpdate?.lobby_id) {
+        lobby_id = dataUpdate?.lobby_id;
+        objectUpdate.lobby_id = lobby_id;
+      }
+      // check exist lobby
+      const lobby:LobbyIncludedLobType = await this.lobbyService.getLobbyById(lobby_id, false);
+      if(!lobby) throw new NotFoundException('Lobby not found')
+
+      // Check valid max table number and update table count
+      let table_count = oldWeddingData.table_count;
+      if(dataUpdate?.table_count){
+        table_count = dataUpdate?.table_count 
+        objectUpdate.table_count = table_count;
+        
+        if(table_count > lobby.LobType["max_table_count"]) throw new BadRequestException(`This lobby's max table is ${lobby.LobType["max_table_count"]}(your order: ${table_count})`)
+        // check valid lob min price
+        const { foodPrice } = await this.preparePriceForPayment(weddingID);
+        const minTablePrice = lobby.LobType["min_table_price"];
+        const lobName = lobby.name;
+        const lobTypeName = lobby.LobType.type_name;
+        const tablePrice = foodPrice/table_count;
+        if(tablePrice < minTablePrice) {
+          throw new BadGatewayException (`Lobby ${lobName} (Type ${lobTypeName}) : min table price ${minTablePrice}(your: ${tablePrice})`)
+        }
+      }
+
+      // Check valid lobby and date for weeding
+      let shift = oldWeddingData?.shift;
+      if(dataUpdate?.shift) {
+        shift = dataUpdate?.shift;
+        objectUpdate.shift = shift;
+      }
+
+      let wedding_date = oldWeddingData?.wedding_date;
+      if(dataUpdate?.wedding_date) {
+        wedding_date = new Date(dataUpdate?.wedding_date);
+        objectUpdate.wedding_date = wedding_date;
+
+        const eventOnDate = await this.findEventOnDate(wedding_date);
+        const isValidDate = eventOnDate.some(data => data.shift === shift)
+        const isSameLob = eventOnDate.some(data => data['lobby_id'] === lobby_id)
+        if(isValidDate && isSameLob) throw new ConflictException('This date & shift had a wedding');
+      }
+
+      if(dataUpdate?.note) objectUpdate.note = dataUpdate?.note;
+
+      // Create wedding 
+      const updatedWedding = await this.prisma.wedding.update({
+        where: { id: weddingID, },
+        data: objectUpdate,
+      })
+  
+      return updatedWedding
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+  // async calculateFoodPrice() {
+  //   try {
+      
+  //   } catch (error) {
+  //     console.log(error);
+  //     throw error;
+  //   }
+  // }
+
   async getFoodPriceForWedding (weddingId:string) {
 
     const dataWedding = await this.prisma.wedding.findUnique({
@@ -351,7 +457,6 @@ export class WeddingService {
         const errorFoodList = []
         let tablePrice = 0
 
-        await resetFoodOrder(weddingId)
         //calc food price for each table
         for (const food of foods) {
           // check exist food
@@ -381,7 +486,8 @@ export class WeddingService {
 
         return {
           msg: errorFoodList,
-          totalPrice
+          totalPrice,
+          tablePrice
         }
       }
       const insertFoodOrderData = async (
@@ -427,7 +533,7 @@ export class WeddingService {
       const lobName = dataWedding.Lobby.name
       const lobTypeName = dataWedding.Lobby.LobType["type_name"]
 
-      
+      await resetFoodOrder(weddingId);
 
       const result = await foodOrderProcess({
         foods,
@@ -436,7 +542,7 @@ export class WeddingService {
         minTablePrice,
         lobName,
         lobTypeName
-      })
+      });
 
       return result;
     } catch (error) {

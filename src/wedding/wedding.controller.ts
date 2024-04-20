@@ -1,9 +1,10 @@
 import { PageAccess } from 'src/auth/page_access.decorator';
-import { createWeddingDto } from './create_wedding.dto';
+import { createWeddingDto } from './dto/create_wedding.dto';
 import { WeddingService } from './wedding.service';
 import { Body, Controller, Get, Patch, Post, Query, UseGuards, Param } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PageGuard } from 'src/auth/page.guard';
+import { updateWeddingDto } from './dto/update_wedding.dto';
 
 @PageAccess('order')
 @UseGuards(JwtAuthGuard, PageGuard)
@@ -27,6 +28,11 @@ export class WeddingController {
   @Post('create/wedding')
   async createWedding(@Body() dataCreate:createWeddingDto) {
     return this.weddingService.createWedding(dataCreate);
+  }
+  
+  @Post('edit/wedding/:weddingID')
+  async updateWedding(@Param('weddingID') weddingID:string, @Body() dataUpdate:updateWeddingDto) {
+    return this.weddingService.updateWedding(weddingID, dataUpdate);
   }
 
   @Post('create/wedding/food')

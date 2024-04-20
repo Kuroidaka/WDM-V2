@@ -11,6 +11,16 @@ export interface WeddingInterface {
   table_count:number;
   note:string;
 }
+export interface WeddingUpdateInterface {
+  groom?:string;
+  bride?:string;
+  wedding_date?:Date;
+  shift?:Wedding_shift;
+  lobby_id?:string;
+  customer_id?:string;
+  table_count?:number;
+  note?:string;
+}
 
 export interface serviceOrder {
   id:string;
