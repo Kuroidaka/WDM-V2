@@ -1073,7 +1073,7 @@ export class WeddingService {
 
       // deposit
       const depositRequire = deposit * totalPrice / 100
-      if(transactionAmount < depositRequire) {
+      if(transactionAmount < depositRequire && transactionAmount < remainPrice) {
         throw new UnprocessableEntityException(`deposit amount for this lobby need to be ${deposit}% <=> ${depositRequire}`);
       }
 
