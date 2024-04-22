@@ -294,29 +294,41 @@ export class WeddingService {
 
       // Check phone number exist
       let customer:CustomerInterface = {}
+      let phone = oldWeddingData.Customer.phone;
       if(dataUpdate?.phone && dataUpdate?.phone !== oldWeddingData.Customer.phone) {
-        const phone = dataUpdate.phone;
-        // Check exist customer with phone number
-        customer = await this.customerService.findByPhone(phone) as CustomerInterface;
-    
-        if(!customer) { //If customer with phone number is not exist 
-          const groom = dataUpdate?.groom || oldWeddingData.groom;
-          const bride = dataUpdate?.bride || oldWeddingData.bride;
-          
-          // create new customer
-          const name = `${groom}/${bride}`;
-          customer = await this.customerService.createCustomer(name, phone) as CustomerInterface;
-          objectUpdate.groom = groom;
-          objectUpdate.bride = bride;
-        }
-        else { // get data groom and bride from old found customer data follow phone number
-          objectUpdate.groom = customer.name.split('/')[0];
-          objectUpdate.bride = customer.name.split('/')[1];
-        }
-
-        objectUpdate.customer_id = customer.id;
-
+        phone = dataUpdate.phone;
       }
+      
+      // Check exist customer with phone number
+      customer = await this.customerService.findByPhone(phone) as CustomerInterface;
+  
+      if(!customer) { //If customer with phone number is not exist 
+        const groom = dataUpdate?.groom || oldWeddingData.groom;
+        const bride = dataUpdate?.bride || oldWeddingData.bride;
+        
+        // create new customer
+        const name = `${groom}/${bride}`;
+        customer = await this.customerService.createCustomer(name, phone) as CustomerInterface;
+        objectUpdate.groom = groom;
+        objectUpdate.bride = bride;
+      }
+      else {
+
+        let groom = oldWeddingData.groom;
+        let bride = oldWeddingData.bride;
+
+        if(dataUpdate?.groom) {
+          groom = dataUpdate?.groom
+          objectUpdate.groom = groom
+        }
+        if(dataUpdate?.bride) {
+          bride = dataUpdate?.bride
+          objectUpdate.bride = bride
+        }
+      }
+
+
+      objectUpdate.customer_id = customer.id;
   
       // valid lobby
       let lobby_id = oldWeddingData?.lobby_id;
