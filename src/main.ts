@@ -11,9 +11,7 @@ import { PrismaClientExceptionFilter } from './common/filters/prisma-exception.f
 const logger = new Logger('main');
 
 async function bootstrap() {
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
-    logger: ['error', 'warn'],
-  });
+  const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   const { httpAdapter } = app.get(HttpAdapterHost,);
   app.useGlobalFilters(

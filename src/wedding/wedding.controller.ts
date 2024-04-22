@@ -12,6 +12,11 @@ import { updateWeddingDto } from './dto/update_wedding.dto';
 export class WeddingController {
   constructor(private weddingService:WeddingService) {}
 
+  @Get("find/")
+  async searchWeddingByPhone(@Query('phone') phone:string) {
+    return this.weddingService.searchWeddingByPhone(phone);
+  }
+
   @Get('/:weddingId')
   async getWeddingById(
     @Param('weddingId') weddingId:string,
@@ -100,5 +105,6 @@ export class WeddingController {
   async getCurrentDepositForWedding(@Param('weddingId') weddingId:string) {
     return this.weddingService.getCurrentDepositForWedding(weddingId);
   }
+
 
 }

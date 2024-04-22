@@ -87,6 +87,25 @@ export class WeddingService {
     })
   }
 
+  async searchWeddingByPhone(phone:string){
+    try {
+      const weddings = await this.prisma.wedding.findMany({
+        where: {
+          Customer: {
+            phone:phone
+          }
+        },
+        include: {
+          Customer: true
+        }
+      })
+
+      return weddings
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 
   async getMonthWedding(month:number, year:number) {
     try {
