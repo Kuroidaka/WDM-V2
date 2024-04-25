@@ -1209,6 +1209,8 @@ export class WeddingService {
         totalPrice,
         transactionAmount
       })
+
+      if(remainPrice === null) return { msg: `bill have been fully paid`};
       
       if(remainPrice > 0) {
         return { msg: `payment is not enough, you paid: ${transactionAmount} in total: ${newTotalPrice}`};
