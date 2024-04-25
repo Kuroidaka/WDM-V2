@@ -89,18 +89,53 @@ export class WeddingService {
 
   async searchWeddingByPhone(phone:string){
     try {
-      const weddings = await this.prisma.wedding.findMany({
+
+      const queryObject:{
+        where: {
+          Customer: {
+            phone:string
+          }
+        },
+        include: {
+          Bill?: any,
+          Customer: boolean,
+          Lobby: {
+            include: {  LobType: boolean, }
+          }
+        }
+      } = {
         where: {
           Customer: {
             phone:phone
           }
         },
         include: {
-          Customer: true
+          Bill: {
+            orderBy: {
+                "created_at": 'desc'
+            }
+          },
+          Customer: true,
+          Lobby: {
+            include: {
+              LobType: true
+            }
+          }
         }
-      })
+      };
 
-      return weddings
+
+      const weddings = await this.prisma.wedding.findMany(queryObject)
+
+      const weddingList = weddings.map(data => {
+        if(data.Bill.length > 0) {
+            if(data.Bill[0]["remain_amount"] <= 0)
+                return {...data, status: "paid"} 
+            return {...data, status: "deposit"} 
+        }
+        return {...data, status: "pending"} 
+      })
+      return weddingList
     } catch (error) {
       console.log(error);
       throw error;
@@ -1163,6 +1198,9 @@ export class WeddingService {
       // check exist bill
       const bills = await this.billService.getBillsByWeddingId(weddingId);
 
+      // check bill paid
+      if(bills[0].remain_amount < 0) return { msg: `bill have been fully paid`};
+
       // if bill exist
       const { remainPrice, newTotalPrice } = this.calculateRemainPrice({
         bills,
@@ -1171,9 +1209,6 @@ export class WeddingService {
         totalPrice,
         transactionAmount
       })
-      if(remainPrice < 0) {
-        return { msg: remainPrice }
-      }
       
       if(remainPrice > 0) {
         return { msg: `payment is not enough, you paid: ${transactionAmount} in total: ${newTotalPrice}`};
