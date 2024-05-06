@@ -17,31 +17,48 @@ export class RevenueService {
 
 
 
-  async getListRevenue() { //junk function for the frontend
+  async getListRevenue(isIncludeFee=false) { //junk function for the frontend
     try {
       const revenueSplitByDate = []
       const billData = await this.billService.getBills()
-
-      billData.forEach((bill) => {
-        const originalDate = bill['payment_date'].toISOString().split("T")[0]
-        const parts = originalDate.split("-");  // ['2024', '04', '17']
-        const date = `${parts[2]}-${parts[1]}-${parts[0]}`;  // '17-04-2024'
-        const index = revenueSplitByDate.findIndex(data => data?.day === date)
-        if(index !== -1) {
-          revenueSplitByDate[index].revenue += bill.total_price;
-        } else {
-          revenueSplitByDate.push({
-            day: date,
-            revenue: bill.total_price,
-            weddingnumber: 0
-          })
-        }
-      })
-
       const weddingData = await this.weddingService.getWeddings()
+      for(const wedding of weddingData) {
+        
+        if(wedding.Bill.length > 0){
+          const bill = wedding.Bill.reduce((mainBill, currentBill) => 
+            (mainBill.payment_date < currentBill.payment_date ? mainBill : currentBill), wedding.Bill[0]);
+          const originalDate = wedding['wedding_date'].toISOString().split("T")[0]
+          const parts = originalDate.split("-");  // ['2024', '04', '17']
+          const date = `${parts[2]}-${parts[1]}-${parts[0]}`;  // '17-04-2024'
+          const year = parts[0]
+          const month = parts[1]
+          const totalPriceByMonth = await this.totalWeddingRevenueByMonth({ year: Number(year), month: Number(month) })
+          const index = revenueSplitByDate.findIndex(data => data?.day === date)
+          const extra_fee = calcPenalty(wedding.wedding_date, new Date(), bill.total_price)
+          
+          
+          if(index !== -1) {
+            const newTotalPrice = isIncludeFee ?  bill.total_price + extra_fee.extraFee:  bill.total_price
+            revenueSplitByDate[index].estimate_revenue += newTotalPrice ;
+            // revenueSplitByDate[index].ratio = newTotalPrice/
+            const ratio = revenueSplitByDate[index].estimate_revenue / totalPriceByMonth * 100
+            revenueSplitByDate[index].ratio = Number(ratio.toFixed(2));
+          } else {
+            const estimate_revenue = isIncludeFee? bill.total_price + extra_fee.extraFee: bill.total_price
+
+            const ratio = estimate_revenue / totalPriceByMonth * 100
+            revenueSplitByDate.push({
+              day: date,
+              estimate_revenue: estimate_revenue,
+              ratio: Number(ratio.toFixed(2)),
+              weddingnumber: 0
+            })
+          }
+        }
+      }     
 
       weddingData.forEach((wedding) => {
-        const originalDate = wedding['created_at'].toISOString().split("T")[0]
+        const originalDate = wedding['wedding_date'].toISOString().split("T")[0]
         const parts = originalDate.split("-");  // ['2024', '04', '17']
         const date = `${parts[2]}-${parts[1]}-${parts[0]}`;  // '17-04-2024'
         const index = revenueSplitByDate.findIndex(data => data?.day === date)
@@ -50,7 +67,7 @@ export class RevenueService {
         } else {
           revenueSplitByDate.push({
             day: date,
-            revenue: 0,
+            estimate_revenue: 0,
             weddingnumber: 1
           })
         }
@@ -79,6 +96,8 @@ export class RevenueService {
       // Real revenue
       const realRevenue = weddingData.reduce((total, data) => {
         const totalDeposit = data["Bill"].reduce((total, current) => {
+          if(current["remain_amount"] < 0)
+            return (total += (current["deposit_amount"] + current["remain_amount"]));
           return (total += current["deposit_amount"]);
         }, 0);
 
@@ -94,9 +113,8 @@ export class RevenueService {
         const totalPrice = data["Bill"].length > 0 ? data["Bill"][0]["total_price"] : 0;
         if (data["is_penalty_mode"]) {
           const penalData = calcPenalty(weddingDate, new Date(), totalPrice);
-          if (penalData.isPenal) {
-            estimatePrice = penalData.extraFee + totalPrice;
-          }
+            const extraFee = penalData.extraFee || 0
+            estimatePrice = extraFee + totalPrice;
         } else {
           estimatePrice = totalPrice;
         }
@@ -109,6 +127,30 @@ export class RevenueService {
     } catch (error) {
       console.log(error);
       throw error;
+    }
+  }
+
+  async totalWeddingRevenueByMonth({ year, month }: { year: number; month: number; }):Promise<number> {
+    try{
+      const weddingData = await this.weddingService.getWeddingsInMonth(year, month);
+
+      // Real revenue
+      const realRevenue = weddingData.reduce((total, data) => {
+        // const totalDeposit = data["Bill"].reduce((total, current) => {
+        //   return (total += current["deposit_amount"]);
+        let totalPriceForWedding = 0;
+        if(data["Bill"].length > 0) {
+          const bill = data.Bill.reduce((mainBill, currentBill) => 
+            (mainBill.payment_date < currentBill.payment_date ? mainBill : currentBill), data.Bill[0]);
+          totalPriceForWedding = bill.total_price
+        }
+        return (total += totalPriceForWedding)
+      }, 0);
+
+      return realRevenue
+    }catch (error) {
+      console.log(error)
+      throw error
     }
   }
 

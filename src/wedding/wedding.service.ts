@@ -211,7 +211,7 @@ export class WeddingService {
           ...queryObject.include,
           Bill: {
             orderBy: {
-                "created_at": 'desc'
+                "payment_date": 'desc'
             }
           }
         }}
@@ -235,6 +235,36 @@ export class WeddingService {
     }
   }
 
+  async getWeddingsInMonth(year:number, month:number) {
+    const timezoneOffset = +7 * 60 * 60 * 1000; // convert hours to milliseconds
+
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0, 23, 59, 59, 999);
+    
+    // Adjust start and end dates to account for the timezone difference
+    const adjustedStartDate = new Date(startDate.getTime() + timezoneOffset);
+    const adjustedEndDate = new Date(endDate.getTime() + timezoneOffset);
+    
+    try {
+      const weddings = await this.prisma.wedding.findMany({
+        where: {
+          AND: [
+          {wedding_date: {gte: adjustedStartDate, }},
+          {wedding_date: {lte: adjustedEndDate, }}
+          ]
+        },
+        include: {
+          Bill: true, // assuming you want to include related bills
+        }
+      });
+
+      console.log("weddings", weddings)
+      return weddings;
+    } catch (error) {
+      console.error('Error fetching weddings:', error);
+      throw error;
+    }
+  }
   async getWeddingById({id, bill}:{id:string, bill?: boolean}) {
     try {
       let queryObject:{

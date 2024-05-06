@@ -6,8 +6,9 @@ export class RevenueController {
   constructor(private revenueService:RevenueService) {}
 
   @Get('list-revenue')
-  async getListBill() {
-    return this.revenueService.getListRevenue();
+  async getListBill(@Query("includeFee") includeFee="false") {
+  const isIncludeFee = includeFee === "true"
+    return this.revenueService.getListRevenue(isIncludeFee);
   }
 
   @Get()
@@ -21,6 +22,13 @@ export class RevenueController {
   @Get('total')
   async getTotalRevenue() {
     return this.revenueService.getTotalRevenue();
+  }
+  @Get('total_revenue_by_month')
+  async totalRevenueByMonth(
+    @Body('year') year:number,
+    @Body('month') month:number
+  ) {
+    return this.revenueService.totalWeddingRevenueByMonth({ year, month });
   }
 
   @Get('wedding-number')
