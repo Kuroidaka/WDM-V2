@@ -1199,8 +1199,11 @@ export class WeddingService {
       const bills = await this.billService.getBillsByWeddingId(weddingId);
 
       // check bill paid
-      if(bills[0].remain_amount < 0) return { msg: `bill have been fully paid`};
+      if(bills.length > 0) {
+        if(bills[0].remain_amount < 0) return { msg: `bill have been fully paid` };
+      }
 
+      console.log("bills", bills)
       // if bill exist
       const { remainPrice, newTotalPrice } = this.calculateRemainPrice({
         bills,

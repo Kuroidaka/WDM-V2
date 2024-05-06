@@ -20,8 +20,9 @@ export class AuthController {
   async login(@Request() req) {
     const userID = req.user.id;
     const permissionList:Permission[] = await this.userService.getUserPermission(userID);
+    const role = await this.privilegeService.getRoleNameByUserId(userID)
 
-    return this.authService.login(req.user, permissionList)
+    return this.authService.login(req.user, permissionList, role)
   }
 
   @UseGuards(JwtAuthGuard)

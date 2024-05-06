@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Param, Body, Patch, Delete, Query, UseGuards } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { User } from '@prisma/client';
+import { PrivilegeService } from 'src/privilege/privilege.service';
 // import { PageAccess } from 'src/auth/page_access.decorator';
 // import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 // import { PageGuard } from 'src/auth/page.guard';
@@ -8,7 +9,10 @@ import { User } from '@prisma/client';
 
 @Controller('users')
 export class UsersController {
-  constructor(private userService:UsersService) {}
+  constructor(
+    private userService:UsersService,
+    private privilegeService:PrivilegeService
+  ) {}
 
   @Get()
   async getUsers(){
@@ -18,6 +22,11 @@ export class UsersController {
   @Get('find')
   async findByUsername(@Query('username') username:string):Promise<User | undefined> {
     return this.userService.findByUsername(username)
+  }
+
+  @Get('find_role/:userId')
+  async getRoleNameByUserId(@Param('userId') userId:string) {
+    return this.privilegeService.getRoleNameByUserId(userId)
   }
 
   @Patch('/:id/update')

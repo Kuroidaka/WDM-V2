@@ -74,6 +74,30 @@ export class PrivilegeService {
     }
   }
 
+  async getRoleNameByUserId(userId:string) {
+    try {
+      const role = await this.prisma.user.findFirst({
+        where: { id: userId },
+        include: {
+          UserRole: {
+            include: {
+              Role: true
+            }
+          }
+        }
+      })
+      const result = {
+        id: role.UserRole[0].Role.id,
+        name: role.UserRole[0].Role.name,
+      }
+      return result
+
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
+  }
+
   async createRole(dataCreate:CreateWeddingDto){
     try {
       const { name, permissionList } = dataCreate;

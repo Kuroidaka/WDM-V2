@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { CreateBillDto } from './dto/create_bill.dto';
 
@@ -50,6 +50,11 @@ export class BillService {
             "created_at": 'desc'
         }
     })
+
+    if(!bills) {
+      // throw new NotFoundException("Not found bill record for ")
+      console.log("Not found bill record for wedding id:", weddingId)
+    }
       return bills
     } catch (error) {
       console.log(error);

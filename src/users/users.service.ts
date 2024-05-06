@@ -57,8 +57,17 @@ export class UsersService {
   async findByUsername(username:string) {
     try {
       const user = await this.prisma.user.findUnique({
-        where: { username }
+        where: { username },
+        include: {
+          UserRole: {
+            include: {
+              Role: true
+            }
+          }
+        }
       })
+
+      console.log("user", user)
   
       return user
     } catch (error) {

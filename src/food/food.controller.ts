@@ -31,6 +31,10 @@ export class FoodController {
     return this.foodService.findFoodByID(id)
   }
 
+  @Post('check-inventory/:foodID') // create food 
+  async checkInventory(@Param('foodID') foodID:string, @Body('upcoming_count') upcoming_count:number) {
+    return this.foodService.checkInventory(upcoming_count, foodID)
+  }
   @Post('create') // create food 
   async createFood(@Body() createData:CreateFoodDto) {
     return this.foodService.createFood(createData)

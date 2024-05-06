@@ -1,5 +1,5 @@
 import { ConfigService } from '@nestjs/config';
-import { HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, NotFoundException, UnprocessableEntityException } from '@nestjs/common';
 
 import { UpdateFoodDto } from './dto/update_food.dto';
 import { CreateFoodDto } from './dto/create_food.dto';
@@ -194,6 +194,18 @@ export class FoodService {
     } catch (error) {
       console.log(error);
       throw error;
+    }
+  }
+
+  async checkInventory(upcomingInventory:number, foodId:string) {
+    try {
+      const food = await this.findFoodByID(foodId)
+
+      if(upcomingInventory > food.inventory)
+        throw new UnprocessableEntityException(`${food.name}'s remain inventory is: ${food.inventory}(your order: ${upcomingInventory})`)
+    } catch (error) {
+      console.log(error)
+      throw error
     }
   }
 }
