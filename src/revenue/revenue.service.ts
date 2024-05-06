@@ -35,21 +35,23 @@ export class RevenueService {
           const totalPriceByMonth = await this.totalWeddingRevenueByMonth({ year: Number(year), month: Number(month) })
           const index = revenueSplitByDate.findIndex(data => data?.day === date)
           const extra_fee = calcPenalty(wedding.wedding_date, new Date(), bill.total_price)
+          const estimateTotalrevenue = isIncludeFee ?  bill.total_price + extra_fee.extraFee:  bill.total_price
+          const realTotalRevenue = await this.weddingService.getCurrentDepositForWedding(wedding.id)
           
           
           if(index !== -1) {
-            const newTotalPrice = isIncludeFee ?  bill.total_price + extra_fee.extraFee:  bill.total_price
-            revenueSplitByDate[index].estimate_revenue += newTotalPrice ;
-            // revenueSplitByDate[index].ratio = newTotalPrice/
+            revenueSplitByDate[index].estimate_revenue += estimateTotalrevenue;
+            revenueSplitByDate[index].real_revenue += realTotalRevenue;
+            // revenueSplitByDate[index].ratio = estimateTotalrevenue/
             const ratio = revenueSplitByDate[index].estimate_revenue / totalPriceByMonth * 100
             revenueSplitByDate[index].ratio = Number(ratio.toFixed(2));
           } else {
-            const estimate_revenue = isIncludeFee? bill.total_price + extra_fee.extraFee: bill.total_price
 
-            const ratio = estimate_revenue / totalPriceByMonth * 100
+            const ratio = estimateTotalrevenue / totalPriceByMonth * 100
             revenueSplitByDate.push({
               day: date,
-              estimate_revenue: estimate_revenue,
+              estimate_revenue: estimateTotalrevenue,
+              real_revenue: realTotalRevenue,
               ratio: Number(ratio.toFixed(2)),
               weddingnumber: 0
             })
