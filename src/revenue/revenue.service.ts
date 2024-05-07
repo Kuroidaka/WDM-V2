@@ -20,13 +20,13 @@ export class RevenueService {
   async getListRevenue(isIncludeFee=false) { //junk function for the frontend
     try {
       const revenueSplitByDate = []
-      const billData = await this.billService.getBills()
+      // const billData = await this.billService.getBills()
       const weddingData = await this.weddingService.getWeddings()
       for(const wedding of weddingData) {
         
         if(wedding.Bill.length > 0){
           const bill = wedding.Bill.reduce((mainBill, currentBill) => 
-            (mainBill.payment_date < currentBill.payment_date ? mainBill : currentBill), wedding.Bill[0]);
+            (mainBill.payment_date < currentBill.payment_date ? currentBill : mainBill ), wedding.Bill[0]);
           const originalDate = wedding['wedding_date'].toISOString().split("T")[0]
           const parts = originalDate.split("-");  // ['2024', '04', '17']
           const date = `${parts[2]}-${parts[1]}-${parts[0]}`;  // '17-04-2024'
@@ -75,6 +75,15 @@ export class RevenueService {
         }
       })
 
+      function formatDate(dateStr) {
+        // Split the date string into parts
+        const [day, month, year] = dateStr.split('-');
+        // Return a new date string in ISO format: "YYYY-MM-DD"
+        return `${year}-${month}-${day}`;
+    }
+    
+      revenueSplitByDate.sort((a, b) => formatDate(a.day).localeCompare(formatDate(b.day)));
+    
       return revenueSplitByDate
     } catch (error) {
       console.log(error);
@@ -82,17 +91,21 @@ export class RevenueService {
     }
   }
 
-  async getTotalRevenue() {
+  async getTotalRevenue(month?:number, year?:number) {
     try {
       const finalData:{
         weddingNum?:number,
         realRevenue?:number,
         estimateRevenue?:number,
       } = {};
-      const weddingData = await this.weddingService.getWeddings()
+      let weddingData
+      if(month !== -1 && year !== -1)
+        weddingData = await this.weddingService.getWeddingsInMonth(year, month)
+      else 
+        weddingData = await this.weddingService.getWeddings()
 
       // Number wedding
-      const weddingNum = await this.weddingService.weddingNum();
+      const weddingNum = weddingData.length;
       finalData.weddingNum = weddingNum;
 
       // Real revenue

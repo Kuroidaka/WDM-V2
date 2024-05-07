@@ -527,11 +527,42 @@ export class WeddingService {
   async orderFood(weddingId:string, foods:{id:string, count:number}[]) {
       /*DEFINE*/
       const resetFoodOrder = async (weddingId:string) => { // reset previous data food order
+        
+        for(const food of foods) {
+          
+          const foodOrder = await this.prisma.foodOrder.findMany({
+            where: {
+              AND: [
+                {"wedding_id": weddingId},
+                {"food_id": food.id}
+              ]
+            }
+          })
+
+          const oldInven = foodOrder.length > 0 ? foodOrder[0].count : 0
+
+          const foodData = await this.prisma.food.findUnique({
+            where: { id: food.id }
+          })
+
+          await this.prisma.food.update({
+            where: {
+              id: food.id
+            },
+            data: {
+              inventory: foodData.inventory + oldInven
+            }
+          })
+
+        }
+        
         await this.prisma.foodOrder.deleteMany({
           where: {
             "wedding_id": weddingId
           }
         })
+
+
       }      
       const foodOrderProcess = async ({// Process order food
         foods,
@@ -541,7 +572,7 @@ export class WeddingService {
         lobName,
         lobTypeName
       }: {
-        foods: {id:string, count:number}[],
+        foods: {id:string, count:number, food_id?:string}[],
         weddingId:string,
         tableCount:number,
         minTablePrice:number,
@@ -557,6 +588,7 @@ export class WeddingService {
         for (const food of foods) {
           // check exist food
           const foodID = food.id
+          food.food_id = food.id
           const foodData:any = await this.foodService.findFoodByID(foodID)
           if(!foodData) {
             errorFoodList.push(`Not found any data for food with ID:${foodID}`);
@@ -575,6 +607,7 @@ export class WeddingService {
           totalPrice += foodData.price * food.count * tableCount
         }
 
+        await this.modifyInventory(foods)
         // check valid lob min price
         if(tablePrice < minTablePrice) {
           throw new BadGatewayException (`Lobby ${lobName} (Type ${lobTypeName}) : min table price ${minTablePrice}(your: ${tablePrice})`)
@@ -885,7 +918,7 @@ export class WeddingService {
     }
   }
 
-  async modifyInventory(foodList:foodOrderWedding[]) {
+  async modifyInventory(foodList:{id?:string, count:number, food_id?:string}[]) {
 
     for(const food of foodList) {
       const foodID = food.food_id
@@ -1254,7 +1287,7 @@ export class WeddingService {
           "wedding_id": weddingId
         }
       })
-      await this.modifyInventory(foodDataWedding);
+      // await this.modifyInventory(foodDataWedding);
       // final data
       finalData = {
         ...finalData,

@@ -20,8 +20,11 @@ export class RevenueController {
   }
 
   @Get('total')
-  async getTotalRevenue() {
-    return this.revenueService.getTotalRevenue();
+  async getTotalRevenue(
+    @Query('year') year = "-1", 
+    @Query('month') month = "-1",
+  ) {
+    return this.revenueService.getTotalRevenue(Number(month), Number(year));
   }
   @Get('total_revenue_by_month')
   async totalRevenueByMonth(
