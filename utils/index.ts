@@ -39,3 +39,14 @@ export const calcPenalty = (startDate:Date, endDate:Date= new Date(), totalPrice
 export function isObject(value:any):boolean {
   return value !== null && typeof value === 'object';
 }
+
+export function convertAndFormatDate(dateStr: (Date | string), timeZone='Asia/Bangkok'): Date {
+  const date = new Date(dateStr);
+  // Create a date string in the target timezone
+  const dateStringInTimeZone = date.toLocaleString('en-US', { timeZone: timeZone });
+
+  // Parse the local date string back into a Date object
+  const dateInTimeZone = new Date(dateStringInTimeZone + ' UTC'); // Append 'UTC' to assume this string is UTC
+
+  return dateInTimeZone;
+}

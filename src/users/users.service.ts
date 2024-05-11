@@ -67,7 +67,7 @@ export class UsersService {
         }
       })
 
-      console.log("user", user)
+      // console.log("user", user)
   
       return user
     } catch (error) {

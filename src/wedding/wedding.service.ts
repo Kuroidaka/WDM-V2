@@ -40,7 +40,53 @@ export class WeddingService {
       throw error;
     }
   }
+  async searchWeddingByDate(date:string) {
+    try{
+      // const newDate = new Date(date)
+      // const timezoneOffset = -7 * 60 * 60 * 1000; // convert hours to milliseconds
+      // const adjustedStartDate = new Date(newDate.getTime() + timezoneOffset);
+      // console.log(adjustedStartDate)
+      const weddings = await this.prisma.wedding.findMany({
+        where: {
+          wedding_date: new Date(date),
+        },
+        distinct: ['id'], 
+        include: {
+          Bill: {
+            orderBy: {
+              payment_date: 'desc',
+            },
+          },
+          Customer: true,
+          Lobby: true
+        }
+      });
 
+      const weddingList = weddings.map(data => {
+        // const Bill = data.Bill.reduce(
+        //   (mainBill, currentBill) =>
+        //     mainBill.payment_date < currentBill.payment_date
+        //       ? currentBill
+        //       : mainBill,
+        //   data.Bill[0]
+        // );
+
+        if(data.Bill.length > 0) {
+          if(!data.Bill.some(bill => bill['deposit_amount'] > 0)) 
+            return {...data, status: "pending"} 
+          if(data.Bill[0]["remain_amount"] <= 0)
+            return {...data, status: "paid"}
+          return {...data, status: "deposit"} 
+        }
+        return {...data, status: "pending"} 
+      })
+      
+      return weddingList;
+    }catch(error) {
+      console.log(error)
+      throw error;
+    }
+  }
   // Get Order services + foods
   async getFoodsOrderByWedding(wedding_id:string) {
     try {
@@ -129,9 +175,11 @@ export class WeddingService {
 
       const weddingList = weddings.map(data => {
         if(data.Bill.length > 0) {
-            if(data.Bill[0]["remain_amount"] <= 0)
-                return {...data, status: "paid"} 
-            return {...data, status: "deposit"} 
+          if(!data.Bill.some(bill => bill['deposit_amount'] > 0)) 
+            return {...data, status: "pending"} 
+          if(data.Bill[0]["remain_amount"] <= 0)
+            return {...data, status: "paid"}
+          return {...data, status: "deposit"} 
         }
         return {...data, status: "pending"} 
       })
@@ -218,12 +266,21 @@ export class WeddingService {
       }
 
       const weddingData = await this.prisma.wedding.findMany(queryObject);
-      console.log(weddingData)
       const weddingList = weddingData.map(data => {
+        // const Bill = data.Bill.reduce(
+        //   (mainBill, currentBill) =>
+        //     mainBill.payment_date < currentBill.payment_date
+        //       ? currentBill
+        //       : mainBill,
+        //   data.Bill[0]
+        // );
+
         if(data.Bill.length > 0) {
-            if(data.Bill[0]["remain_amount"] <= 0)
-                return {...data, status: "paid"} 
-            return {...data, status: "deposit"} 
+          if(!data.Bill.some(bill => bill['deposit_amount'] > 0)) 
+            return {...data, status: "pending"} 
+          if(data.Bill[0]["remain_amount"] <= 0)
+            return {...data, status: "paid"}
+          return {...data, status: "deposit"} 
         }
         return {...data, status: "pending"} 
       })
@@ -236,21 +293,21 @@ export class WeddingService {
   }
 
   async getWeddingsInMonth(year:number, month:number) {
-    const timezoneOffset = +7 * 60 * 60 * 1000; // convert hours to milliseconds
-
+    
     const startDate = new Date(year, month - 1, 1);
     const endDate = new Date(year, month, 0, 23, 59, 59, 999);
     
-    // Adjust start and end dates to account for the timezone difference
-    const adjustedStartDate = new Date(startDate.getTime() + timezoneOffset);
-    const adjustedEndDate = new Date(endDate.getTime() + timezoneOffset);
+    // // Adjust start and end dates to account for the timezone difference
+    // const timezoneOffset = +7 * 60 * 60 * 1000; // convert hours to milliseconds
+    // const adjustedStartDate = new Date(startDate.getTime() + timezoneOffset);
+    // const adjustedEndDate = new Date(endDate.getTime() + timezoneOffset);
     
     try {
       const weddings = await this.prisma.wedding.findMany({
         where: {
           AND: [
-          {wedding_date: {gte: adjustedStartDate, }},
-          {wedding_date: {lte: adjustedEndDate, }}
+          {wedding_date: {gte: startDate, }},
+          {wedding_date: {lte: endDate, }}
           ]
         },
         include: {
@@ -258,7 +315,6 @@ export class WeddingService {
         }
       });
 
-      console.log("weddings", weddings)
       return weddings;
     } catch (error) {
       console.error('Error fetching weddings:', error);
@@ -320,6 +376,10 @@ export class WeddingService {
         shift,
         table_count,
       } = dataCreate;
+
+      // const timezoneOffset = +7 * 60 * 60 * 1000; // convert hours to milliseconds
+      // let newWedding_date = new Date(wedding_date)
+      // newWedding_date = new Date(newWedding_date.getTime() + timezoneOffset);
   
       // Check phone number exist
       if(!phone) throw new BadRequestException('Missing phone number');
@@ -734,16 +794,16 @@ export class WeddingService {
       }
 
       // create bill
-      await this.billService.createBill({
-        wedding_id: weddingId,
-        service_total_price: servicePrice,
-        food_total_price: foodPrice,
-        total_price: totalPrice,
-        deposit_require: deposit,
-        deposit_amount: 0,
-        remain_amount: remainPrice,
-        extra_fee: extraFee,
-      })
+      // await this.billService.createBill({
+      //   wedding_id: weddingId,
+      //   service_total_price: servicePrice,
+      //   food_total_price: foodPrice,
+      //   total_price: totalPrice,
+      //   deposit_require: deposit,
+      //   deposit_amount: 0,
+      //   remain_amount: remainPrice,
+      //   extra_fee: extraFee,
+      // })
 
 
       return finalData
@@ -1266,7 +1326,6 @@ export class WeddingService {
         if(bills[0].remain_amount < 0) return { msg: `bill have been fully paid` };
       }
 
-      console.log("bills", bills)
       // if bill exist
       const { remainPrice, newTotalPrice } = this.calculateRemainPrice({
         bills,

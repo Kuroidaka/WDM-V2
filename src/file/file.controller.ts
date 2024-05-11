@@ -32,7 +32,7 @@ export class FileController {
   }))
   storageFoodImage(@UploadedFile() file: Express.Multer.File, @Body('food_id') food_id:string) {
     // return this.fileService.storageFile(file);
-    console.log(file)
+    // console.log(file)
     return this.fileService.storageFoodImage(file.filename, food_id);
   }
 

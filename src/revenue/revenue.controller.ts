@@ -6,9 +6,13 @@ export class RevenueController {
   constructor(private revenueService:RevenueService) {}
 
   @Get('list-revenue')
-  async getListBill(@Query("includeFee") includeFee="false") {
+  async getListBill(
+    @Query("includeFee") includeFee="false",
+    @Query('year') year?:string, 
+    @Query('month') month?:string,
+  ) {
   const isIncludeFee = includeFee === "true"
-    return this.revenueService.getListRevenue(isIncludeFee);
+    return this.revenueService.getListRevenue(isIncludeFee, Number(month), Number(year));
   }
 
   @Get()

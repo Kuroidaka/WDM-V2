@@ -67,7 +67,6 @@ export class FoodService {
 
   async findFoodByNameLike(name:string):Promise<FoodInterFace[]> {
     try {
-      console.log("find food")
       const foods = await this.prisma.food.findMany({
         where: {
          AND: [
@@ -86,8 +85,6 @@ export class FoodService {
           }
         }
       });
-
-      console.log(foods)
 
     return this.processFoodImageUrl(foods);
     } catch (error) {

@@ -25,6 +25,10 @@ export class BillService {
       const startDate = new Date(year, month - 1, 1);
       const endDate = new Date(year, month, 0); 
 
+      // const timezoneOffset = +7 * 60 * 60 * 1000; // convert hours to milliseconds
+      // const adjustedStartDate = new Date(startDate.getTime() + timezoneOffset);
+      // const adjustedEndDate = new Date(endDate.getTime() + timezoneOffset);
+
       const bills = await this.prisma.bill.findMany({
         where: {
           "payment_date": {

@@ -3,7 +3,7 @@ import { WeddingService } from './../wedding/wedding.service';
 import { Injectable } from "@nestjs/common";
 import { BillService } from 'src/bill/bill.service';
 import { PrismaService } from "src/prisma/prisma.service";
-import { calcPenalty } from 'utils';
+import { calcPenalty, convertAndFormatDate } from 'utils';
 import { WeddingInterface } from 'src/wedding/wedding.interface';
 
 @Injectable()
@@ -17,17 +17,21 @@ export class RevenueService {
 
 
 
-  async getListRevenue(isIncludeFee=false) { //junk function for the frontend
+  async getListRevenue(isIncludeFee=false, wedding_month:number, wedding_year:number) { //junk function for the frontend
     try {
       const revenueSplitByDate = []
       // const billData = await this.billService.getBills()
-      const weddingData = await this.weddingService.getWeddings()
+      const weddingData = wedding_month && wedding_year 
+        ? await this.weddingService.getWeddingsInMonth(wedding_year, wedding_month)
+        : await this.weddingService.getWeddings()
       for(const wedding of weddingData) {
         
         if(wedding.Bill.length > 0){
           const bill = wedding.Bill.reduce((mainBill, currentBill) => 
             (mainBill.payment_date < currentBill.payment_date ? currentBill : mainBill ), wedding.Bill[0]);
-          const originalDate = wedding['wedding_date'].toISOString().split("T")[0]
+          const formatDate = convertAndFormatDate(wedding['wedding_date'])
+          const originalDate = formatDate.toISOString().split("T")[0]
+
           const parts = originalDate.split("-");  // ['2024', '04', '17']
           const date = `${parts[2]}-${parts[1]}-${parts[0]}`;  // '17-04-2024'
           const year = parts[0]
@@ -45,24 +49,32 @@ export class RevenueService {
             // revenueSplitByDate[index].ratio = estimateTotalrevenue/
             const ratio = revenueSplitByDate[index].estimate_revenue / totalPriceByMonth * 100
             revenueSplitByDate[index].ratio = Number(ratio.toFixed(2));
+            revenueSplitByDate[index].totalPriceByMonth = totalPriceByMonth
           } else {
-
             const ratio = estimateTotalrevenue / totalPriceByMonth * 100
             revenueSplitByDate.push({
               day: date,
               estimate_revenue: estimateTotalrevenue,
               real_revenue: realTotalRevenue,
               ratio: Number(ratio.toFixed(2)),
-              weddingnumber: 0
+              weddingnumber: 0,
+              originalDate: wedding['wedding_date'],
+              originalDate1: new Date(wedding['wedding_date']).toISOString(),
             })
           }
+
+
         }
       }     
 
       weddingData.forEach((wedding) => {
-        const originalDate = wedding['wedding_date'].toISOString().split("T")[0]
+        const formatDate = convertAndFormatDate(wedding['wedding_date'])
+        const originalDate = formatDate.toISOString().split("T")[0]
+
         const parts = originalDate.split("-");  // ['2024', '04', '17']
         const date = `${parts[2]}-${parts[1]}-${parts[0]}`;  // '17-04-2024'
+        const year = parts[0]
+        const month = parts[1]
         const index = revenueSplitByDate.findIndex(data => data?.day === date)
         if(index !== -1) {
           revenueSplitByDate[index].weddingnumber += 1;
@@ -156,7 +168,7 @@ export class RevenueService {
         let totalPriceForWedding = 0;
         if(data["Bill"].length > 0) {
           const bill = data.Bill.reduce((mainBill, currentBill) => 
-            (mainBill.payment_date < currentBill.payment_date ? mainBill : currentBill), data.Bill[0]);
+            (mainBill.payment_date < currentBill.payment_date ? currentBill : mainBill), data.Bill[0]);
           totalPriceForWedding = bill.total_price
         }
         return (total += totalPriceForWedding)

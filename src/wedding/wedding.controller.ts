@@ -17,6 +17,11 @@ export class WeddingController {
     return this.weddingService.searchWeddingByPhone(phone);
   }
 
+  @Get("find-by-date/")
+  async searchWeddingByDate(@Query('date') date:string) {
+    return this.weddingService.searchWeddingByDate(date);
+  }
+
   @Get('/:weddingId')
   async getWeddingById(
     @Param('weddingId') weddingId:string,
