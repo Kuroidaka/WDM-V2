@@ -1,7 +1,7 @@
 import { PageAccess } from 'src/auth/page_access.decorator';
 import { CreateWeddingDto } from './dto/create_role.dto';
 import { PrivilegeService } from './privilege.service';
-import { Controller, Get, Param, Post, Query, Body, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Post, Query, Body, Delete, UseGuards, Put } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PageGuard } from 'src/auth/page.guard';
 
@@ -70,6 +70,13 @@ export class PrivilegeController {
     @Body('userID') userID:string,
   ) {
     return this.privilegeService.setUserRole(userID, roleID);
+  }
+
+  @Delete('role/delete/:roleID')
+  async deleteRole(
+    @Param('roleID') roleID:string,
+  ) {
+    return this.privilegeService.deleteRole(roleID);
   }
 
 

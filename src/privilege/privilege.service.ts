@@ -22,7 +22,7 @@ export class PrivilegeService {
       const { RolePermission, ...rest } = role;
       role.permissions = permissions;
 
-      const newDate = {permissions, ...rest};
+      const newDate = {...rest, permissions};
       return newDate;
     })
   }
@@ -213,6 +213,32 @@ export class PrivilegeService {
     }
   }
 
+  async deleteRole(roleId:string) {
+    try {
+
+      const staffRoleId = '64007797-029d-4339-b78b-d51e2d2f3e1a';
+
+      const transaction = await this.prisma.$transaction([
+        this.prisma.userRole.updateMany({
+          where: { role_id: roleId },
+          data: { role_id: staffRoleId },
+        }),
+        this.prisma.rolePermission.deleteMany({
+          where: { role_id: roleId },
+        }),
+        this.prisma.role.delete({
+          where: { id: roleId },
+        })
+      ]);
+    
+      return transaction;
+
+    } catch(error) {
+      console.log(error)
+      throw error
+    }
+  } 
+
   async updateRolePermissionByPage(roleID:string, page:string) {
     try {
       // check role existed from database
@@ -326,17 +352,17 @@ export class PrivilegeService {
 
       if(!findUser) throw new NotFoundException(`User not found for id: ${userID}`)
 
-      // check user id have the role id
-      const userRoleCheck = await this.prisma.userRole.findMany({
-        where: {
-          AND: [
-            { user_id: userID, },
-            { role_id: roleID, },
-          ]   
-        }
-      })
+      // // check user id have the role id
+      // const userRoleCheck = await this.prisma.userRole.findMany({
+      //   where: {
+      //     AND: [
+      //       { user_id: userID, },
+      //       { role_id: roleID, },
+      //     ]   
+      //   }
+      // })
 
-      if(userRoleCheck.length > 0) throw new ConflictException(`user id: ${userID} already have role: ${roleID}`);
+      // if(userRoleCheck.length > 0) throw new ConflictException(`user id: ${userID} already have role: ${roleID}`);
 
       // check user id have any role
       const userCheck = await this.prisma.userRole.findMany({

@@ -16,11 +16,13 @@ export class LobbyService {
 */
   async getLobbyTypes(includeDeletedBool:boolean):Promise<LobType[]> {
     try {
-      const queryObject:{ where?: { deleted_at?: any } } = {};
+      const queryObject:{ where?: { deleted_at?: any }, orderBy?: any } = {};
 
       if(!includeDeletedBool) {
         queryObject.where = { deleted_at: null };
       }
+
+      queryObject.orderBy = { created_at: "asc" };
 
       const lobbyTypeList: LobType[] = await this.prisma.lobType.findMany(queryObject)
       return lobbyTypeList
