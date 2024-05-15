@@ -1,9 +1,5 @@
 import { $Enums } from '@prisma/client';
 export interface PermissionData {
-  UserRole?: UserRole[];
-}
-
-export interface UserRole {
   Role?: Role;
 }
 

@@ -17,39 +17,36 @@ export class UsersService {
   async getUsers(): Promise<Array<Omit<User, 'UserRole'> & { PermissionList: Permission[] }>> {
     const usersData = await this.prisma.user.findMany({
       include: {
-        UserRole: {
+        Role: {
           select: {
-            Role: {
+            name: true,
+            RolePermission: {
               select: {
-                name: true,
-                RolePermission: {
+                Permission: {
                   select: {
-                    Permission: {
-                      select: {
-                        id: true,
-                        name: true,
-                        description: true,
-                        page: true,
-                        created_at: true,
-                        updated_at: true,
-                      },
-                    },
+                    id: true,
+                    name: true,
+                    description: true,
+                    page: true,
+                    created_at: true,
+                    updated_at: true,
                   },
                 },
               },
             },
           },
         },
+
       },
     });
 
     return usersData.map(user => {
-      const tempData: Permission[] = user.UserRole[0]?.Role?.RolePermission.map(rp => rp.Permission) || [];
-      const { UserRole, ...userData } = user;
+      const tempData: Permission[] = user.Role?.RolePermission.map(rp => rp.Permission) || [];
+      const { Role, ...userData } = user;
       return {
         ...userData,
         PermissionList: tempData,
-        role: user.UserRole[0]?.Role.name,
+        role: Role.name,
       };
     });
   }
@@ -59,11 +56,7 @@ export class UsersService {
       const user = await this.prisma.user.findUnique({
         where: { username },
         include: {
-          UserRole: {
-            include: {
-              Role: true
-            }
-          }
+          Role: true
         }
       })
 
@@ -95,22 +88,18 @@ export class UsersService {
           id,
         },
         select: {
-          UserRole: {
+          Role: {
             select: {
-              Role: {
+              RolePermission: {
                 select: {
-                  RolePermission: {
+                  Permission: {
                     select: {
-                      Permission: {
-                        select: {
-                          id: true,
-                          name: true,
-                          description: true,
-                          page: true,
-                          created_at: true,
-                          updated_at: true,
-                        },
-                      },
+                      id: true,
+                      name: true,
+                      description: true,
+                      page: true,
+                      created_at: true,
+                      updated_at: true,
                     },
                   },
                 },
@@ -120,7 +109,7 @@ export class UsersService {
         },
       });
   
-      const permissionList:Permission[] = userPermissions?.UserRole[0]?.Role?.RolePermission?.map(permission => permission.Permission) || []
+      const permissionList:Permission[] = userPermissions?.Role?.RolePermission?.map(permission => permission.Permission) || []
   
       return permissionList
     } catch (error) {
@@ -170,7 +159,6 @@ export class UsersService {
 
   async deleteUser(id:string) {
     try {
-      await this.privilegeService.deleteUserRole(id)
       await this.prisma.user.delete({
         where: { id }
       })

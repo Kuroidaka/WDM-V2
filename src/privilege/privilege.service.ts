@@ -1,3 +1,4 @@
+import { User } from '@prisma/client';
 import { BadRequestException, ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { RolesGetAPI } from './privilege.interface.ts/role.interface';
@@ -79,16 +80,12 @@ export class PrivilegeService {
       const role = await this.prisma.user.findFirst({
         where: { id: userId },
         include: {
-          UserRole: {
-            include: {
-              Role: true
-            }
-          }
+          Role: true
         }
       })
       const result = {
-        id: role.UserRole[0].Role.id,
-        name: role.UserRole[0].Role.name,
+        id: role.Role.id,
+        name: role.Role.name,
       }
       return result
 
@@ -219,7 +216,7 @@ export class PrivilegeService {
       const staffRoleId = '64007797-029d-4339-b78b-d51e2d2f3e1a';
 
       const transaction = await this.prisma.$transaction([
-        this.prisma.userRole.updateMany({
+        this.prisma.user.updateMany({
           where: { role_id: roleId },
           data: { role_id: staffRoleId },
         }),
@@ -351,43 +348,19 @@ export class PrivilegeService {
       })
 
       if(!findUser) throw new NotFoundException(`User not found for id: ${userID}`)
+        
+      // update user role
 
-      // // check user id have the role id
-      // const userRoleCheck = await this.prisma.userRole.findMany({
-      //   where: {
-      //     AND: [
-      //       { user_id: userID, },
-      //       { role_id: roleID, },
-      //     ]   
-      //   }
-      // })
-
-      // if(userRoleCheck.length > 0) throw new ConflictException(`user id: ${userID} already have role: ${roleID}`);
-
-      // check user id have any role
-      const userCheck = await this.prisma.userRole.findMany({
+      const newUser = await this.prisma.user.update({
         where: {
-          user_id: userID
+          id: userID
+        },
+        data: {
+          role_id: roleID
         }
       })
-      
-      let userRole
-      if(userCheck.length > 0) {
-        userRole = await this.prisma.userRole.updateMany({
-          where: { user_id: userID, },
-          data: { role_id: roleID, },
-        })
-      }
-      else{
-        userRole = await this.prisma.userRole.create({
-          data: {
-            user_id: userID,
-            role_id: roleID
-          }
-        })
-      }
 
-      return userRole;
+      return newUser;
     } catch (error) {
       console.log(error);
       throw error;
@@ -396,15 +369,16 @@ export class PrivilegeService {
 
   async userHasPermission(userId:string, page:string):Promise<boolean> {
     try {
-      const roles = await this.prisma.userRole.findMany({
-        where: { user_id: userId },
+      const roles = await this.prisma.user.findMany({
+        where: { id: userId },
         include: { Role: {
           include: { RolePermission: {
             include: { Permission: true }
           }}
         }}
       });
-  
+      if(!roles[0].Role)
+        return false
       return roles.some(role => 
         role.Role.RolePermission.some(rp => 
           rp.Permission.page === page
@@ -416,16 +390,6 @@ export class PrivilegeService {
     }
   }
 
-  async deleteUserRole(user_id:string) {
-    try {
-      await this.prisma.userRole.deleteMany({
-        where: { user_id }
-      })
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
 
   async template() {
     try {

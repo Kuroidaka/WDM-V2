@@ -44,6 +44,7 @@ INSERT INTO `WDM`.`User`
     `display_name`,
     `username`,
     `password`,
+    `role_id`,
     `created_at`,
     `updated_at`
 )
@@ -53,6 +54,7 @@ VALUES
     'canh pham',
     'test',
     '$2a$10$BQ3PJs7iCxr.UNFHVnAoBeP0.QKp04kzc7/YwpSB/gx0ygPeFG5NO',
+    'c5a5b477-73f5-4a97-b657-b2fd7a8efaae',
     NOW(),
     NOW()
 ),
@@ -61,6 +63,7 @@ VALUES
     'Quy Khung',
     'test1',
     '$2a$10$BQ3PJs7iCxr.UNFHVnAoBeP0.QKp04kzc7/YwpSB/gx0ygPeFG5NO',
+    c5a5b477-73f5-4a97-b657-b2fd7a8efaae
     NOW(),
     NOW()
 ),
@@ -69,6 +72,7 @@ VALUES
     'Minh Tue',
     'test2',
     '$2a$10$BQ3PJs7iCxr.UNFHVnAoBeP0.QKp04kzc7/YwpSB/gx0ygPeFG5NO',
+    '64007797-029d-4339-b78b-d51e2d2f3e1a',
     NOW(),
     NOW()
 );

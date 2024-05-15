@@ -88,21 +88,12 @@ model Lobby {
 
 model Permission {
   id             String           @id @default(uuid())
-  name           String          
+  name           String
   description    String?
-  page           Permission_page   @unique()
+  page           Permission_page  @unique
   created_at     DateTime         @default(now())
   updated_at     DateTime         @default(now())
   RolePermission RolePermission[]
-}
-
-model Role {
-  id             String           @id @default(uuid())
-  name           String           @unique
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @default(now())
-  RolePermission RolePermission[]
-  UserRole       UserRole[]
 }
 
 model RolePermission {
@@ -124,7 +115,7 @@ model Service {
   status       Boolean
   created_at   DateTime          @default(now())
   updated_at   DateTime          @default(now())
-  deleted_at  DateTime?
+  deleted_at   DateTime?
   inventory    Int
   serviceFiles ServiceFileLink[]
 }
@@ -144,26 +135,26 @@ model ServiceOrder {
   @@index([wedding_id], map: "ServiceOrder_wedding_id_fkey")
 }
 
-model User {
-  id           String     @id @default(uuid())
-  display_name String
-  username     String     @unique
-  password     String
-  created_at   DateTime   @default(now())
-  updated_at   DateTime   @default(now())
-  UserRole     UserRole[]
+model Role {
+  id             String           @id @default(uuid())
+  name           String           @unique
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @default(now())
+  RolePermission RolePermission[]
+  User           User[]
 }
 
-model UserRole {
-  user_id    String
-  role_id    String
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now())
-  Role       Role     @relation(fields: [role_id], references: [id])
-  User       User     @relation(fields: [user_id], references: [id])
+model User {
+  id           String   @id @default(uuid())
+  display_name String
+  username     String   @unique
+  password     String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @default(now())
+  role_id      String?
+  Role         Role?    @relation(fields: [role_id], references: [id])
 
-  @@id([user_id, role_id])
-  @@index([role_id], map: "UserRole_role_id_fkey")
+  @@index([role_id], map: "Role_role_id_fkey")
 }
 
 model Wedding {
