@@ -38,7 +38,7 @@ VALUES
 -- tk: test
 -- mk: test
 -- ============================
-INSERT INTO `WDM`.`User`
+INSERT INTO `User`
 (
     `id`,
     `display_name`,
@@ -131,7 +131,7 @@ INSERT INTO Lobby (id, name, lob_type_id) VALUES
 -- ============================
 -- INIT FOODS
 -- ============================
-INSERT INTO WDM.Food (id, name, price, inventory) VALUES
+INSERT INTO Food (id, name, price, inventory) VALUES
 ('n1x2c3v4b5n6m7l8k9j0', 'Gỏi cuốn', 50000, 100),
 ('q1w2e3r4t5y6u7i8o9p0', 'Bánh mì thịt nướng', 30000, 150),
 ('a1s2d3f4g5h6j7k8l9z0', 'Phở bò', 45000, 200),
