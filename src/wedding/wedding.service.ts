@@ -137,11 +137,8 @@ export class WeddingService {
     try {
 
       const queryObject:{
-        where: {
-          Customer: {
-            phone:string
-          }
-        },
+        where?: any,
+        orderBy?: any,
         include: {
           Bill?: any,
           Customer: boolean,
@@ -154,6 +151,9 @@ export class WeddingService {
           Customer: {
             phone:phone
           }
+        },
+        orderBy: {
+          "created_at": 'desc'
         },
         include: {
           Bill: {
@@ -170,6 +170,9 @@ export class WeddingService {
         }
       };
 
+      if(phone === "") {
+        queryObject.where = {}
+      }
 
       const weddings = await this.prisma.wedding.findMany(queryObject)
 
@@ -235,6 +238,7 @@ export class WeddingService {
   async getWeddings(bill?: boolean) {
     try {
       let queryObject:{
+        orderBy?: any,
         include: {
           Bill?: any,
           Customer: boolean,
@@ -255,13 +259,18 @@ export class WeddingService {
       };
 
       if(bill) {
-        queryObject = { ...queryObject, include: {
-          ...queryObject.include,
-          Bill: {
-            orderBy: {
-                "payment_date": 'desc'
+        queryObject = { 
+          ...queryObject,
+          orderBy: {
+            "created_at": 'desc'
+          },
+          include: {
+            ...queryObject.include,
+            Bill: {
+              orderBy: {
+                  "payment_date": 'desc'
+              }
             }
-          }
         }}
       }
 
@@ -397,7 +406,7 @@ export class WeddingService {
       if(!lobby) throw new NotFoundException('Lobby not found')
   
       // Check valid max table number
-      if(table_count > lobby.LobType["max_table_count"]) throw new BadRequestException(`This lobby's max table is ${lobby.LobType["max_table_count"]}(your order: ${table_count})`)
+      if(table_count > lobby.LobType["max_table_count"]) throw new BadRequestException(`This lobby's max table is ${lobby.LobType["max_table_count"]} - (your order: ${table_count})`)
   
       // Check valid lobby and date for weeding
       const eventOnDate = await this.findEventOnDate(wedding_date);
@@ -490,7 +499,7 @@ export class WeddingService {
         table_count = dataUpdate?.table_count 
         objectUpdate.table_count = table_count;
         
-        if(table_count > lobby.LobType["max_table_count"]) throw new BadRequestException(`This lobby's max table is ${lobby.LobType["max_table_count"]}(your order: ${table_count})`)
+        if(table_count > lobby.LobType["max_table_count"]) throw new BadRequestException(`This lobby's max table is ${lobby.LobType["max_table_count"]} - (your order: ${table_count})`)
         // check valid lob min price
         const { foodPrice } = await this.preparePriceForPayment(weddingID);
         const minTablePrice = lobby.LobType["min_table_price"];

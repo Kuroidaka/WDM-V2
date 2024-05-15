@@ -199,7 +199,7 @@ export class FoodService {
       const food = await this.findFoodByID(foodId)
 
       if(upcomingInventory > food.inventory)
-        throw new UnprocessableEntityException(`${food.name}'s remain inventory is: ${food.inventory}(your order: ${upcomingInventory})`)
+        throw new UnprocessableEntityException(`${food.name}'s remain inventory is: ${food.inventory} - (your order: ${upcomingInventory})`)
     } catch (error) {
       console.log(error)
       throw error

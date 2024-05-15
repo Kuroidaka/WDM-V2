@@ -15,40 +15,46 @@ export class UsersService {
   ) {}
 
   async getUsers(): Promise<Array<Omit<User, 'UserRole'> & { PermissionList: Permission[] }>> {
-    const usersData = await this.prisma.user.findMany({
-      include: {
-        Role: {
-          select: {
-            name: true,
-            RolePermission: {
-              select: {
-                Permission: {
-                  select: {
-                    id: true,
-                    name: true,
-                    description: true,
-                    page: true,
-                    created_at: true,
-                    updated_at: true,
+    try{
+      const usersData = await this.prisma.user.findMany({
+        include: {
+          Role: {
+            select: {
+              name: true,
+              RolePermission: {
+                select: {
+                  Permission: {
+                    select: {
+                      id: true,
+                      name: true,
+                      description: true,
+                      page: true,
+                      created_at: true,
+                      updated_at: true,
+                    },
                   },
                 },
               },
             },
           },
+  
         },
-
-      },
-    });
-
-    return usersData.map(user => {
-      const tempData: Permission[] = user.Role?.RolePermission.map(rp => rp.Permission) || [];
-      const { Role, ...userData } = user;
-      return {
-        ...userData,
-        PermissionList: tempData,
-        role: Role.name,
-      };
-    });
+      });
+  
+      return usersData.map(user => {
+        const tempData: Permission[] = user.Role?.RolePermission.map(rp => rp.Permission) || [];
+        const { Role, ...userData } = user;
+        return {
+          ...userData,
+          PermissionList: tempData,
+          role: user.Role?.name,
+        };
+      });
+    }
+    catch(error) {
+      console.log(error)
+      throw error;
+    }
   }
 
   async findByUsername(username:string) {
