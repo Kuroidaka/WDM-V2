@@ -1,4 +1,4 @@
-use WDM_TEST;
+use WDM;
 
 -- ============================
 -- INIT PERMISSION
