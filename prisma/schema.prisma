@@ -86,28 +86,6 @@ model Lobby {
   @@index([lob_type_id], map: "Lobby_lob_type_id_fkey")
 }
 
-model Permission {
-  id             String           @id @default(uuid())
-  name           String
-  description    String?
-  page           Permission_page  @unique
-  created_at     DateTime         @default(now())
-  updated_at     DateTime         @default(now())
-  RolePermission RolePermission[]
-}
-
-model RolePermission {
-  role_id       String
-  permission_id String
-  created_at    DateTime   @default(now())
-  updated_at    DateTime   @default(now())
-  Permission    Permission @relation(fields: [permission_id], references: [id])
-  Role          Role       @relation(fields: [role_id], references: [id])
-
-  @@id([role_id, permission_id])
-  @@index([permission_id], map: "RolePermission_permission_id_fkey")
-}
-
 model Service {
   id           String            @id @default(uuid())
   name         String
@@ -133,6 +111,28 @@ model ServiceOrder {
   Wedding       Wedding  @relation(fields: [wedding_id], references: [id])
 
   @@index([wedding_id], map: "ServiceOrder_wedding_id_fkey")
+}
+
+model Permission {
+  id             String           @id @default(uuid())
+  name           String
+  description    String?
+  page           Permission_page  @unique
+  created_at     DateTime         @default(now())
+  updated_at     DateTime         @default(now())
+  RolePermission RolePermission[]
+}
+
+model RolePermission {
+  role_id       String
+  permission_id String
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @default(now())
+  Permission    Permission @relation(fields: [permission_id], references: [id])
+  Role          Role       @relation(fields: [role_id], references: [id])
+
+  @@id([role_id, permission_id])
+  @@index([permission_id], map: "RolePermission_permission_id_fkey")
 }
 
 model Role {

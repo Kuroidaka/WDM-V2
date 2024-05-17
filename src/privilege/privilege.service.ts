@@ -218,7 +218,7 @@ export class PrivilegeService {
       const transaction = await this.prisma.$transaction([
         this.prisma.user.updateMany({
           where: { role_id: roleId },
-          data: { role_id: staffRoleId },
+          data: { role_id: null },
         }),
         this.prisma.rolePermission.deleteMany({
           where: { role_id: roleId },
