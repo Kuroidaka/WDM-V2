@@ -1,5 +1,4 @@
-import { Wedding_shift } from '@prisma/client';
-import { IsDate, IsEnum, IsNumber, IsString, IsOptional } from "class-validator";
+import { IsNumber, IsString, IsOptional } from "class-validator";
 
 export class updateWeddingDto {
   
@@ -28,8 +27,8 @@ export class updateWeddingDto {
   note?:string;
   
   @IsOptional()
-  @IsEnum(Wedding_shift)
-  shift?:Wedding_shift;
+  @IsString()
+  shift_id?:string;
 
   @IsOptional()
   @IsNumber()

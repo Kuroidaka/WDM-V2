@@ -14,7 +14,7 @@ import { ServiceInterFace } from 'src/service_wedding/service.interface';
 import { calculateTimeDifference } from 'utils';
 import { BillService } from 'src/bill/bill.service';
 import { BillInterface } from 'src/bill/bill.interface';
-import { Bill, Customer, Lobby, Wedding } from '@prisma/client';
+import { Bill, Customer, Lobby, Wedding, Shift } from '@prisma/client';
 import { updateWeddingDto } from './dto/update_wedding.dto';
 
 @Injectable()
@@ -40,15 +40,26 @@ export class WeddingService {
       throw error;
     }
   }
-  async searchWeddingByDate(date:string) {
+  adjustDate = (date) => {
+    const newDate = new Date(date);
+    // Set hours, minutes, seconds, and milliseconds to 0
+    newDate.setHours(0, 0, 0, 0);
+
+    return newDate;
+  };
+
+ filterByShiftIds = (shiftList:Shift[], weddingList:Wedding[]) => {
+    const shiftIds = shiftList.map(item => item.id);
+    return weddingList.filter(item => shiftIds.includes(item.shift_id));
+  };
+
+  async searchWeddingByDate(date:string, shift_list:Shift[] = [], lobby_id:string) {
     try{
-      // const newDate = new Date(date)
-      // const timezoneOffset = -7 * 60 * 60 * 1000; // convert hours to milliseconds
-      // const adjustedStartDate = new Date(newDate.getTime() + timezoneOffset);
-      // console.log(adjustedStartDate)
+      const newDate = this.adjustDate(date)
+
       const weddings = await this.prisma.wedding.findMany({
         where: {
-          wedding_date: new Date(date),
+          wedding_date: newDate,
         },
         distinct: ['id'], 
         include: {
@@ -58,30 +69,36 @@ export class WeddingService {
             },
           },
           Customer: true,
-          Lobby: true
+          Lobby: true,
+          Shift: true
         }
       });
 
       const weddingList = weddings.map(data => {
-        // const Bill = data.Bill.reduce(
-        //   (mainBill, currentBill) =>
-        //     mainBill.payment_date < currentBill.payment_date
-        //       ? currentBill
-        //       : mainBill,
-        //   data.Bill[0]
-        // );
-
-        if(data.Bill.length > 0) {
-          if(!data.Bill.some(bill => bill['deposit_amount'] > 0)) 
-            return {...data, status: "pending"} 
-          if(data.Bill[0]["remain_amount"] <= 0)
-            return {...data, status: "paid"}
-          return {...data, status: "deposit"} 
-        }
-        return {...data, status: "pending"} 
-      })
+        if (data.lobby_id === lobby_id) {
+          if (data.Bill.length > 0) {
+            const hasDeposit = data.Bill.some(bill => bill.deposit_amount > 0);
+            const isPaid = data.Bill[0].remain_amount <= 0;
       
-      return weddingList;
+            if (!hasDeposit) {
+              return { ...data, status: "pending" };
+            }
+            if (isPaid) {
+              return { ...data, status: "paid" };
+            }
+            return { ...data, status: "deposit" };
+          }
+          return { ...data, status: "pending" };
+        }
+        return null;
+      }).filter(data => data !== null);
+
+      let result = []
+      if(weddingList.length > 0 ) {
+        result = shift_list.length > 0 ? this.filterByShiftIds(shift_list, weddingList) : []
+      }
+      
+      return result;
     }catch(error) {
       console.log(error)
       throw error;
@@ -144,7 +161,8 @@ export class WeddingService {
           Customer: boolean,
           Lobby: {
             include: {  LobType: boolean, }
-          }
+          },
+          Shift: true
         }
       } = {
         where: {
@@ -161,6 +179,7 @@ export class WeddingService {
                 "created_at": 'desc'
             }
           },
+          Shift: true,
           Customer: true,
           Lobby: {
             include: {
@@ -187,29 +206,6 @@ export class WeddingService {
         return {...data, status: "pending"} 
       })
       return weddingList
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
-  async getMonthWedding(month:number, year:number) {
-    try {
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0); 
-
-      const weddings = await this.prisma.wedding.findMany({
-          where: {
-            "wedding_date": {
-              gte: startDate,
-              lte: endDate
-            }
-          }
-        }
-      );
-      
-      return weddings;
-
     } catch (error) {
       console.log(error);
       throw error;
@@ -244,7 +240,8 @@ export class WeddingService {
           Customer: boolean,
           Lobby: {
             include: {  LobType: boolean, }
-          }
+          },
+          Shift: boolean
         }
       } = {
         include: {
@@ -254,7 +251,8 @@ export class WeddingService {
             include: {
               LobType: true
             }
-          }
+          },
+          Shift: true
         }
       };
 
@@ -321,6 +319,7 @@ export class WeddingService {
         },
         include: {
           Bill: true, // assuming you want to include related bills
+          Shift: true
         }
       });
 
@@ -382,7 +381,7 @@ export class WeddingService {
         phone,
         wedding_date,
         note,
-        shift,
+        shift_id,
         table_count,
       } = dataCreate;
 
@@ -410,7 +409,7 @@ export class WeddingService {
   
       // Check valid lobby and date for weeding
       const eventOnDate = await this.findEventOnDate(wedding_date);
-      const isValidDate = eventOnDate.some(data => data.shift === shift)
+      const isValidDate = eventOnDate.some(data => data.shift_id === shift_id)
       const isSameLob = eventOnDate.some(data => data['lobby_id'] === lobby_id)
   
       if(isValidDate && isSameLob) throw new ConflictException('This date & shift had a wedding');
@@ -421,7 +420,7 @@ export class WeddingService {
           groom,
           bride,
           wedding_date: new Date(wedding_date),
-          shift,
+          shift_id,
           lobby_id,
           customer_id: customer.id,
           table_count,
@@ -512,10 +511,10 @@ export class WeddingService {
       }
 
       // Check valid lobby and date for weeding
-      let shift = oldWeddingData?.shift;
-      if(dataUpdate?.shift) {
-        shift = dataUpdate?.shift;
-        objectUpdate.shift = shift;
+      let shift_id = oldWeddingData?.shift_id;
+      if(dataUpdate?.shift_id) {
+        shift_id = dataUpdate?.shift_id;
+        objectUpdate.shift_id = shift_id;
       }
 
       let wedding_date = oldWeddingData?.wedding_date;
@@ -524,7 +523,7 @@ export class WeddingService {
         objectUpdate.wedding_date = wedding_date;
 
         const eventOnDate = await this.findEventOnDate(wedding_date);
-        const isValidDate = eventOnDate.some(data => data.shift === shift)
+        const isValidDate = eventOnDate.some(data => data.shift_id === shift_id)
         const isSameLob = eventOnDate.some(data => data['lobby_id'] === lobby_id)
         if(isValidDate && isSameLob) throw new ConflictException('This date & shift had a wedding');
       }

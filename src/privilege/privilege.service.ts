@@ -213,8 +213,6 @@ export class PrivilegeService {
   async deleteRole(roleId:string) {
     try {
 
-      const staffRoleId = '64007797-029d-4339-b78b-d51e2d2f3e1a';
-
       const transaction = await this.prisma.$transaction([
         this.prisma.user.updateMany({
           where: { role_id: roleId },

@@ -38,12 +38,4 @@ export class RevenueController {
     return this.revenueService.totalWeddingRevenueByMonth({ year, month });
   }
 
-  @Get('wedding-number')
-  async getMonthWedding(
-    @Query('year') year:string, 
-    @Query('month') month:string,
-  ) {
-    return this.revenueService.getMonthWedding(Number(month), Number(year));
-  }
-
 }

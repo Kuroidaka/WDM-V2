@@ -4,6 +4,8 @@ import { WeddingService } from './wedding.service';
 import { Body, Controller, Get, Patch, Post, Query, UseGuards, Param } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PageGuard } from 'src/auth/page.guard';
+
+import { Shift } from '@prisma/client';
 import { updateWeddingDto } from './dto/update_wedding.dto';
 
 @PageAccess('order')
@@ -17,9 +19,9 @@ export class WeddingController {
     return this.weddingService.searchWeddingByPhone(phone);
   }
 
-  @Get("find-by-date/")
-  async searchWeddingByDate(@Query('date') date:string) {
-    return this.weddingService.searchWeddingByDate(date);
+  @Post("find-by-date/")
+  async searchWeddingByDate(@Body('date') date:string, @Body('shiftList') shift_list:Shift[], @Body('lobbyId') lobby_id:string ) {
+    return this.weddingService.searchWeddingByDate(date, shift_list, lobby_id);
   }
 
   @Get('/:weddingId')

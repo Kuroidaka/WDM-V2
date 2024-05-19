@@ -4,7 +4,6 @@ import { Injectable } from "@nestjs/common";
 import { BillService } from 'src/bill/bill.service';
 import { PrismaService } from "src/prisma/prisma.service";
 import { calcPenalty, convertAndFormatDate } from 'utils';
-import { WeddingInterface } from 'src/wedding/wedding.interface';
 
 @Injectable()
 export class RevenueService {
@@ -197,20 +196,6 @@ export class RevenueService {
     }
   }
 
-  async getMonthWedding(month:number, year:number){
-    try {
-
-      const weddings = await this.weddingService.getMonthWedding(month, year);
-
-      const sortedWedding = this.sortWeddingByDate(weddings);
-
-      return sortedWedding;
-    } catch (error) {
-      console.log(error);
-      throw error;
-    }
-  }
-
   calculateTotalRevenueByDate (bills:BillInterface[]) {
     const revenueSplitByDate = {}
 
@@ -232,23 +217,6 @@ export class RevenueService {
     return revenueSplitByDate
   }
 
-  sortWeddingByDate (weddings:WeddingInterface[]) {
-    const weddingSplitByDate = {}
-
-    weddings.forEach((wedding) => {
-
-      const date = wedding['wedding_date'].toISOString().split("T")[0]
-      if(weddingSplitByDate[date]) {
-        weddingSplitByDate[date][wedding.shift] = []
-        weddingSplitByDate[date][wedding.shift].push(wedding);
-      } else {
-        weddingSplitByDate[date] = { [wedding.shift]: [wedding]  }
-      }
-    })
-
-    // console.log(weddingSplitByDate)
-    return weddingSplitByDate
-  }
 
   sortRevenueByDate (bills:BillInterface[]) {
     const revenueSplitByDate = []

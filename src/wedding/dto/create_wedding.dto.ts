@@ -1,5 +1,4 @@
-import { Wedding_shift } from '@prisma/client';
-import { IsDate, IsEnum, IsNumber, IsString } from "class-validator";
+import { IsNumber, IsString } from "class-validator";
 
 export class createWeddingDto {
   
@@ -21,8 +20,8 @@ export class createWeddingDto {
   @IsString()
   note:string;
   
-  @IsEnum(Wedding_shift)
-  shift:Wedding_shift;
+  @IsString()
+  shift_id:string;
 
   @IsNumber()
   table_count:number

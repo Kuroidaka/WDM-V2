@@ -162,7 +162,7 @@ model Wedding {
   groom           String
   bride           String
   wedding_date    DateTime
-  shift           Wedding_shift
+  shift_id        String
   lobby_id        String
   customer_id     String
   table_count     Int
@@ -173,13 +173,23 @@ model Wedding {
   Bill            Bill[]
   FoodOrder       FoodOrder[]
   ServiceOrder    ServiceOrder[]
+  Shift           Shift          @relation(fields: [shift_id], references: [id])
   Customer        Customer       @relation(fields: [customer_id], references: [id])
   Lobby           Lobby          @relation(fields: [lobby_id], references: [id])
 
+  @@index([shift_id], map: "Wedding_Shift_id_fkey")
   @@index([customer_id], map: "Wedding_Customer_id_fkey")
   @@index([lobby_id], map: "Wedding_lobby_id_fkey")
 }
 
+model Shift {
+  id    String  @id @default(uuid())
+  name  String
+  Wedding Wedding[]
+  created_at   DateTime          @default(now())
+  updated_at   DateTime          @default(now()) @updatedAt
+  deleted_at      DateTime?
+}
 model Image {
   id           String            @id @default(uuid())
   file_name    String
@@ -219,9 +229,4 @@ enum Permission_page {
   lobby
   order
   food_service
-}
-
-enum Wedding_shift {
-  noon
-  evening
 }

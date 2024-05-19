@@ -1,11 +1,11 @@
-import { Wedding_shift } from "@prisma/client";
+import { Shift } from "@prisma/client";
 
 export interface WeddingInterface {
   id:string;
   groom:string;
   bride:string;
   wedding_date:Date;
-  shift:Wedding_shift;
+  shift_id:string;
   lobby_id:string;
   customer_id:string;
   table_count:number;
@@ -15,7 +15,7 @@ export interface WeddingUpdateInterface {
   groom?:string;
   bride?:string;
   wedding_date?:Date;
-  shift?:Wedding_shift;
+  shift_id?:string;
   lobby_id?:string;
   customer_id?:string;
   table_count?:number;

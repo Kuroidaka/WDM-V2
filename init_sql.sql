@@ -77,6 +77,13 @@ VALUES
     NOW()
 );
 
+-- ============================
+-- INIT SHIFT
+-- ============================
+INSERT INTO Shift (id, name, created_at, updated_at) VALUES 
+('YghjKl9N-1kjL-3kHl8-2jYp', "Evening", '2023-01-15 08:00:00', '2023-01-15 08:00:00'),
+('YghjKl9N-1kjL-3kHl8-2jHz', "Noon", '2023-02-20 09:30:00', '2023-02-20 09:30:00');
+
 
 -- ============================
 -- INIT LOBBY TYPE

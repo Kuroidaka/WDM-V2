@@ -4,12 +4,56 @@ import { CreateLobTypeDto } from './dto/create_lobType.dto';
 import { UpdateLobTypeDto } from './dto/update_lobType.dto';
 import { CreateLobDto } from './dto/create_lobby.dto';
 import { UpdateLobDto } from './dto/update_lobby.dto';
-import { LobType, Lobby } from '@prisma/client';
+import { LobType, Lobby, Shift } from '@prisma/client';
 import { getStartAndEndOfDay } from 'utils';
 import { LobbyIncludedLobType } from './lobby.interface';
+import { CreateShiftDto } from './dto/create_shift.dto';
 @Injectable()
 export class LobbyService {
   constructor(private prisma: PrismaService) {}
+  
+
+
+  async getShifts():Promise<Shift[]> {
+    try {
+
+      const shifts: Shift[] = await this.prisma.shift.findMany({
+        where: { deleted_at: null }
+      })
+      return shifts
+    } catch (error) {
+      throw error
+    }
+  }
+  
+  async createShift(name:string) {
+    try{
+     
+      const shift = await this.prisma.shift.create({
+        data: { name } as any
+      })
+
+      return shift
+    } catch (error) {
+      throw error
+    }
+  }
+  async deleteShift(id:string) {
+    try{
+     
+      const shift = await this.prisma.shift.update({
+        where: { id },
+        data: {
+          deleted_at: new Date()
+        }
+      })
+
+      return shift
+    } catch (error) {
+      throw error
+    }
+  }
+
 
  /*
   =================== LOBBY TYPE ===================
@@ -37,6 +81,22 @@ export class LobbyService {
         where: {
           id
         }
+      })
+
+      return lobbyType
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async findLobbyTypeByName(type_name:string):Promise<LobType[]>{
+    try {
+      const lobbyType:LobType[] = await this.prisma.lobType.findMany({
+        where: {
+          type_name: { contains: type_name },
+          deleted_at: null
+        },
+        orderBy: { created_at: "asc" }
       })
 
       return lobbyType
