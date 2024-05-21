@@ -84,6 +84,12 @@ export class LobbyController {
     return this.lobbyService.getLobbies(date, lob_type_id, includeDeletedBool);
   }
 
+  @Get('/find_lob_by_name') // get lobby type by id
+  async findLobbyByName(@Query('name') name:string, @Query('lobType_id') lobType_id:string):Promise<Lobby[]> {
+
+    return this.lobbyService.findLobbyByName(name, lobType_id);
+  }
+
   @Get('/:id') // Get lobby by id 
   async getLobbyById(
     @Param('id') id:string,
@@ -103,6 +109,7 @@ export class LobbyController {
     const { id } = param;
     return this.lobbyService.updateLobby(id, dataUpdate)
   }
+
 
   @Patch('/:id/soft-delete') // soft delete lobby
   async softDeleteLobby(@Param('id') id:string) {

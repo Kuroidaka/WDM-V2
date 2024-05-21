@@ -182,11 +182,13 @@ export class LobbyService {
           date?: string,
           deleted_at?: any 
         }, 
+        orderBy: any,
         include: any,
       } = {
-          include : {
-              Wedding: true
-          }
+        orderBy: { created_at: "asc" },
+        include : {
+            Wedding: true
+        }
       };
 
       if(lob_type_id) {
@@ -257,6 +259,25 @@ export class LobbyService {
         })
 
         return lobby
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async findLobbyByName(name:string, lobType_id:string):Promise<Lobby[]>{
+    try {
+      const lobby:Lobby[] = await this.prisma.lobby.findMany({
+        where: {
+          name: { contains: name },
+          lob_type_id: lobType_id,
+          deleted_at: null
+        },
+        orderBy: { created_at: "asc" }
+      })
+
+      console.log(lobby)
+
+      return lobby
     } catch (error) {
       throw error
     }

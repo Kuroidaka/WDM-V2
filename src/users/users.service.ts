@@ -5,14 +5,17 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { Permission, PermissionData } from 'src/privilege/privilege.interface.ts/permission_list.interface';
 import { CreateUserDto } from './dto/create_user.dto';
 import { UpdateUserDto } from './dto/update_user.dto';
-
+import { AuthService } from 'src/auth/auth.service';
+import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
   constructor(
     private prisma:PrismaService,
-    private privilegeService:PrivilegeService,
   ) {}
+
+  private readonly saltRounds = 10; 
+
 
   async getUsers(): Promise<Array<Omit<User, 'UserRole'> & { PermissionList: Permission[] }>> {
     try{
@@ -123,6 +126,29 @@ export class UsersService {
     }
   }
 
+  async changePasswordByAdmin(username:string, password:string) {
+    try {
+
+      // find username
+      const user = await this.findByUsername(username);
+      if(!user) throw new NotFoundException('Username not found')
+
+      // hash the password using bcrypt
+      const hashedPassword = await bcrypt.hash(password, this.saltRounds);(password);
+
+      // update passwrod
+      const newUser = this.prisma.user.update({
+        where: { username },
+        data: { password: hashedPassword }
+      });
+
+      return newUser
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
+  }
+
   async createUser(dataCreate:CreateUserDto) {
     try {
       
@@ -143,19 +169,34 @@ export class UsersService {
     }
   }
 
-  async updateUser(id:string, display_name:string) {
+  async updateUser(id:string, dataUpdate:UpdateUserDto) {
     try {      
       // check exist user
       const checkUser = await this.findByID(id);
       if(!checkUser) throw new NotFoundException('User not found');
+      const username = checkUser.username
+
+
+      if(dataUpdate?.password) await this.changePasswordByAdmin(username, dataUpdate?.password)
 
       // update User
-      const user = await this.prisma.user.update({
+      let updateQuery = {
         where: { id },
-        data: { display_name }
-      })
+      } as {
+        where: any,
+        data: any
+      }
 
-      return user
+      if (dataUpdate?.display_name) {
+        updateQuery = { ...updateQuery, data: { display_name: dataUpdate?.display_name }}
+      }
+
+      if (dataUpdate?.role_id) {
+        updateQuery = { ...updateQuery, data: { ...updateQuery.data, role_id: dataUpdate?.role_id }}
+      }
+      if(updateQuery.data) {
+        await this.prisma.user.update(updateQuery)
+      }
   
     } catch (error) {
       console.log(error)

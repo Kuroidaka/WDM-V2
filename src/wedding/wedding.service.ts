@@ -53,7 +53,7 @@ export class WeddingService {
     return weddingList.filter(item => shiftIds.includes(item.shift_id));
   };
 
-  async searchWeddingByDate(date:string, shift_list:Shift[] = [], lobby_id:string) {
+  async searchWeddingByDateForLob(date:string, shift_list:Shift[] = [], lobby_id:string) {
     try{
       const newDate = this.adjustDate(date)
 
@@ -99,6 +99,54 @@ export class WeddingService {
       }
       
       return result;
+    }catch(error) {
+      console.log(error)
+      throw error;
+    }
+  }
+
+  async searchWeddingByDateForReport(date:string) {
+    try{
+      // const newDate = new Date(date)
+      // const timezoneOffset = -7 * 60 * 60 * 1000; // convert hours to milliseconds
+      // const adjustedStartDate = new Date(newDate.getTime() + timezoneOffset);
+      // console.log(adjustedStartDate)
+      const weddings = await this.prisma.wedding.findMany({
+        where: {
+          wedding_date: new Date(date),
+        },
+        distinct: ['id'], 
+        include: {
+          Bill: {
+            orderBy: {
+              payment_date: 'desc',
+            },
+          },
+          Customer: true,
+          Lobby: true
+        }
+      });
+
+      const weddingList = weddings.map(data => {
+        // const Bill = data.Bill.reduce(
+        //   (mainBill, currentBill) =>
+        //     mainBill.payment_date < currentBill.payment_date
+        //       ? currentBill
+        //       : mainBill,
+        //   data.Bill[0]
+        // );
+
+        if(data.Bill.length > 0) {
+          if(!data.Bill.some(bill => bill['deposit_amount'] > 0)) 
+            return {...data, status: "pending"} 
+          if(data.Bill[0]["remain_amount"] <= 0)
+            return {...data, status: "paid"}
+          return {...data, status: "deposit"} 
+        }
+        return {...data, status: "pending"} 
+      })
+      
+      return weddingList;
     }catch(error) {
       console.log(error)
       throw error;

@@ -2,6 +2,7 @@ import { Controller, Get, Post, Param, Body, Patch, Delete, Query, UseGuards } f
 import { UsersService } from './users.service';
 import { User } from '@prisma/client';
 import { PrivilegeService } from 'src/privilege/privilege.service';
+import { UpdateUserDto } from './dto/update_user.dto';
 // import { PageAccess } from 'src/auth/page_access.decorator';
 // import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 // import { PageGuard } from 'src/auth/page.guard';
@@ -32,9 +33,9 @@ export class UsersController {
   @Patch('/:id/update')
   async updateUser(
     @Param('id') id:string,
-    @Body('display_name') display_name:string
+    @Body() dataUpdate:UpdateUserDto
   ) {
-    return this.userService.updateUser(id, display_name);
+    return this.userService.updateUser(id, dataUpdate);
   }
 
   @Delete('/:id/delete')

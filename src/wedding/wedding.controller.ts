@@ -19,9 +19,13 @@ export class WeddingController {
     return this.weddingService.searchWeddingByPhone(phone);
   }
 
-  @Post("find-by-date/")
-  async searchWeddingByDate(@Body('date') date:string, @Body('shiftList') shift_list:Shift[], @Body('lobbyId') lobby_id:string ) {
-    return this.weddingService.searchWeddingByDate(date, shift_list, lobby_id);
+  @Post("find-by-date-lob/")
+  async searchWeddingByDateForLob(@Body('date') date:string, @Body('shiftList') shift_list:Shift[], @Body('lobbyId') lobby_id:string ) {
+    return this.weddingService.searchWeddingByDateForLob(date, shift_list, lobby_id);
+  }
+  @Post("find-by-date-report/")
+  async searchWeddingByDateForReport(@Body('date') date:string ) {
+    return this.weddingService.searchWeddingByDateForReport(date);
   }
 
   @Get('/:weddingId')

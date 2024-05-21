@@ -27,5 +27,6 @@ import { PrivilegeModule } from 'src/privilege/privilege.module';
     JwtStrategy,
     PrismaService
   ],
+  exports: [AuthService]
 })
 export class AuthModule {}
