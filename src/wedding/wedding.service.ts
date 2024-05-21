@@ -338,7 +338,8 @@ export class WeddingService {
           Customer: boolean,
           Lobby: {
             include: {  LobType: boolean, }
-          }
+          },
+          Shift: boolean
         },
       } = { 
         where: { id, },
@@ -348,7 +349,8 @@ export class WeddingService {
             include: {
               LobType: true
             }
-          }
+          },
+          Shift: true
         }
       }
 
