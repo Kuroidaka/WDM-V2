@@ -86,7 +86,7 @@ export class BillService {
             food_total_price,
             total_price,
             deposit_require,
-            deposit_amount,
+            deposit_amount: Number(deposit_amount),
             remain_amount,
             extra_fee,
             

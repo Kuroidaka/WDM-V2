@@ -10,6 +10,7 @@ export interface WeddingInterface {
   customer_id:string;
   table_count:number;
   note:string;
+  is_penalty_mode?: boolean,
   Bill?: Bill[];
   Shift?: Shift;
   Customer?: Customer;

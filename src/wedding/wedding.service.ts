@@ -1095,16 +1095,16 @@ export class WeddingService {
       }
 
       // create bill
-      await this.billService.createBill({
-        wedding_id: weddingId,
-        service_total_price: servicePrice,
-        food_total_price: foodPrice,
-        total_price: totalPrice,
-        deposit_require: deposit,
-        deposit_amount: 0,
-        remain_amount: remainPrice,
-        extra_fee: extraFee,
-      })
+      // await this.billService.createBill({
+      //   wedding_id: weddingId,
+      //   service_total_price: servicePrice,
+      //   food_total_price: foodPrice,
+      //   total_price: totalPrice,
+      //   deposit_require: deposit,
+      //   deposit_amount: 0,
+      //   remain_amount: remainPrice,
+      //   extra_fee: extraFee,
+      // })
 
 
       return finalData
@@ -1153,6 +1153,7 @@ export class WeddingService {
      const servicePrice = await this.getServicePriceForWedding(weddingId);
      const totalPrice = servicePrice + foodPrice
 
+
      return {
       foodPrice,
       servicePrice,
@@ -1160,11 +1161,11 @@ export class WeddingService {
      }
   }
 
-  async getPenalty(totalPrice:number, isPenalty:boolean, weddingDate:Date) {
+  async getPenalty(totalPrice:number, isPenalty:boolean, weddingDate:Date, payment_date?:Date) {
     // check penalty 
     let extraFee = 0
     if(isPenalty) {
-      const payDate = new Date()
+      const payDate = payment_date ? new Date(payment_date) : new Date()
       // "Sun Mar 03 2024 13:54:30 GMT+0700 (Indochina Time)"
       const timeDifference = calculateTimeDifference(weddingDate, payDate);
 
@@ -1340,7 +1341,8 @@ export class WeddingService {
   // Deposit
   async depositOrder(
     transactionAmount:number,
-    weddingId:string
+    weddingId:string,
+    payment_date:Date
   ) {
     try {
      
@@ -1363,7 +1365,7 @@ export class WeddingService {
       const deposit = await this.getDeposit(weddingId)
 
       // Get penalty 
-      const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate);
+      const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate, payment_date);
       /*=============
       PREVIOUS DEPOSIT
       ===============*/
@@ -1425,7 +1427,8 @@ export class WeddingService {
   // Full pay deposit
   async fullPayOrder(
     transactionAmount:number,
-    weddingId:string
+    weddingId:string,
+    payment_date:Date
   ) {
     try {
       
@@ -1448,7 +1451,7 @@ export class WeddingService {
       const isPenalty = dataWeeding["is_penalty_mode"]
 
       // Get penalty 
-      const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate);
+      const extraFee = await this.getPenalty(totalPrice, isPenalty, weddingDate, payment_date);
 
       /*=============
       PREVIOUS DEPOSIT
@@ -1459,7 +1462,7 @@ export class WeddingService {
 
       // check bill paid
       if(bills.length > 0) {
-        if(bills[0].remain_amount < 0) return { msg: `bill have been fully paid` };
+        if(bills[0].remain_amount < 0)  throw new BadRequestException(`bill have been fully paid`)
       }
 
       // if bill exist
@@ -1471,10 +1474,10 @@ export class WeddingService {
         transactionAmount
       })
 
-      if(remainPrice === null) return { msg: `bill have been fully paid`};
+      if(remainPrice === null)  throw new BadRequestException(`bill have been fully paid`);
       
       if(remainPrice > 0) {
-        return { msg: `payment is not enough, you paid: ${transactionAmount} in total: ${newTotalPrice}`};
+        throw new BadRequestException(`payment is not enough, you paid: ${transactionAmount} in total: ${newTotalPrice}`)
       }
        // update inventory
       const foodDataWedding = await this.prisma.foodOrder.findMany({
@@ -1535,8 +1538,8 @@ export class WeddingService {
         },
       })
       
-      const bill = order.Bill[0]
-      totalPrice = bill.total_price
+      const { totalPrice:newTotalPrice } = await this.preparePriceForPayment(weddingId);
+      totalPrice = newTotalPrice
       // if(!currentState) {
       //   
       //   const penalData = calcPenalty(orderDate, new Date(), totalPrice)
@@ -1592,8 +1595,8 @@ export class WeddingService {
         },
       })
       
-      const bill = order.Bill[0]
-      totalPrice = bill.total_price
+      const { totalPrice:newTotal } = await this.preparePriceForPayment(weddingId);
+      totalPrice = newTotal
 
       const weddingDate = new Date(order.wedding_date)
       const extraFee = await this.getPenalty(totalPrice, currentState, weddingDate);
@@ -1605,4 +1608,33 @@ export class WeddingService {
       throw error;
     }
   }
+
+  async getDataForBillPage(weddingId:string) {
+    try {
+
+      const weddingData:WeddingInterface = await this.getWeddingById({id: weddingId, bill:true})
+
+      const { foodPrice, servicePrice, totalPrice } = await this.preparePriceForPayment(weddingId);
+
+      const extraFee = await this.getExtraFeeForWedding(weddingId)
+
+      const { remainPrice, newTotalPrice } = this.calculateRemainPrice({
+        bills: weddingData.Bill,
+        isPenalty: weddingData.is_penalty_mode,
+        extraFee,
+        totalPrice
+      })
+
+      return {
+        foodPrice,
+        servicePrice,
+        totalPrice: extraFee + totalPrice,
+        extraFee,
+        remainPrice
+      }
+    } catch (error) {
+      console.log(error)
+      throw error
+    }
+  } 
 }

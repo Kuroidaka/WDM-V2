@@ -84,17 +84,19 @@ export class WeddingController {
   @Post('deposit')
   async depositOrder(
     @Body('transaction_amount') transaction_amount:number,
-    @Body('weddingId') weddingId:string
+    @Body('weddingId') weddingId:string,
+    @Body('payment_date') payment_date:string
   ) {
-    return this.weddingService.depositOrder(transaction_amount, weddingId);
+    return this.weddingService.depositOrder(transaction_amount, weddingId, new Date(payment_date));
   }
 
   @Post('full-pay')
   async fullPayOrder(
     @Body('transaction_amount') transaction_amount:number,
-    @Body('weddingId') weddingId:string
+    @Body('weddingId') weddingId:string,
+    @Body('payment_date') payment_date:string
   ) {
-    return this.weddingService.fullPayOrder(transaction_amount, weddingId);
+    return this.weddingService.fullPayOrder(transaction_amount, weddingId, new Date(payment_date));
   }
 
   @Patch('toggle-penalty')
@@ -130,6 +132,11 @@ export class WeddingController {
   @Get('/extra_fee/:weddingId')
   async getExtraFeeForWedding(@Param('weddingId') weddingId:string) {
     return this.weddingService.getExtraFeeForWedding(weddingId);
+  }
+
+  @Get('/bill_page/:weddingId')
+  async getDataForBillPage(@Param('weddingId') weddingId:string) {
+    return this.weddingService.getDataForBillPage(weddingId);
   }
 
 

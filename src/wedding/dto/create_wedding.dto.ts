@@ -1,4 +1,4 @@
-import { IsNumber, IsString } from "class-validator";
+import { IsNumber, IsOptional, IsString } from "class-validator";
 
 export class createWeddingDto {
   
@@ -18,7 +18,8 @@ export class createWeddingDto {
   wedding_date:string;
 
   @IsString()
-  note:string;
+  @IsOptional()
+  note?:string;
   
   @IsString()
   shift_id:string;
