@@ -153,7 +153,7 @@ export class WeddingService {
     }
   }
   // Get Order services + foods
-  async getFoodsOrderByWedding(wedding_id:string) {
+  async getFoodsCartByWedding(wedding_id:string) {
     try {
 
       // check wedding exist 
@@ -165,6 +165,7 @@ export class WeddingService {
           wedding_id
         }
       })
+      
 
       return this.cleanObjectOrderResponse(foods)
 
@@ -173,7 +174,7 @@ export class WeddingService {
       throw error;
     }
   }
-  async getServicesOrderByWedding(wedding_id:string) {
+  async getServicesCartByWedding(wedding_id:string) {
     try {
       // check wedding exist 
       const check = await this.getWeddingById({id: wedding_id});
@@ -190,6 +191,61 @@ export class WeddingService {
       throw error;
     }
   }
+
+  async getFoodsOrderByWedding(wedding_id:string) {
+    try {
+
+      // check wedding exist 
+      const check = await this.getWeddingById({id: wedding_id});
+      if(!check) throw new NotFoundException(`Wedding not found for id: ${wedding_id}`)
+
+      const orderFoods = await this.prisma.foodOrder.findMany({
+        where: {
+          wedding_id
+        }
+      })
+
+      let allFoods = await this.foodService.findAllFood()
+
+      allFoods = allFoods.map(food => {
+        const qty = orderFoods.find(orderFood => orderFood.food_id === food.id)?.count || 0
+
+        return {...food, quantity: qty}
+      })
+
+      return allFoods
+
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+  async getServicesOrderByWedding(wedding_id:string) {
+    try {
+      // check wedding exist 
+      const check = await this.getWeddingById({id: wedding_id});
+      if(!check) throw new NotFoundException(`Wedding not found for id: ${wedding_id}`)
+
+      const serviceOrdered = await this.prisma.serviceOrder.findMany({
+        where: { wedding_id }
+      })
+
+      let allServices = await this.serviceWeddingService.findServices()
+
+      allServices = allServices.map(service => {
+        const qty = serviceOrdered.find(orderService => orderService.service_id === service.id)?.count || 0
+
+        return {...service, quantity: qty}
+      })
+
+      return allServices
+
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
+
   cleanObjectOrderResponse(OrderList:(serviceOrderWedding[] | foodOrderWedding[])) {
     return OrderList.map(order => {
       const { id, wedding_id, ...dataOrder } = order;
@@ -253,7 +309,7 @@ export class WeddingService {
         }
         return {...data, status: "pending"} 
       })
-      return weddingList
+      return this.formatDataWedding(weddingList)
     } catch (error) {
       console.log(error);
       throw error;
@@ -340,11 +396,36 @@ export class WeddingService {
         return {...data, status: "pending"} 
       })
       
-      return weddingList;
+      return this.formatDataWedding(weddingList);
     } catch (error) {
       console.log(error);
       throw error;
     }
+  }
+
+  formatDataWedding(weddingList:WeddingInterface[]) {
+    const renderData = []
+    for(const wedding of weddingList ) {
+      const Bill = wedding.Bill.reduce(
+        (mainBill, currentBill) =>
+          mainBill.payment_date < currentBill.payment_date
+            ? currentBill
+            : mainBill,
+        wedding.Bill[0]
+      );
+      const newData = {
+        ...wedding,
+        ...Bill,
+        shift: wedding.Shift.name,
+        shift_id: wedding.Shift.id,
+        customer_name: `${wedding.groom}/${wedding.bride}`,
+        phone: wedding.Customer.phone,
+        lobby_name: wedding.Lobby.name,
+        id: wedding.id,
+      };
+      renderData.push(newData)
+    }
+    return renderData
   }
 
   async getWeddingsInMonth(year:number, month:number) {
@@ -434,35 +515,31 @@ export class WeddingService {
         shift_id,
         table_count,
       } = dataCreate;
-
-      // const timezoneOffset = +7 * 60 * 60 * 1000; // convert hours to milliseconds
-      // let newWedding_date = new Date(wedding_date)
-      // newWedding_date = new Date(newWedding_date.getTime() + timezoneOffset);
   
       // Check phone number exist
-      if(!phone) throw new BadRequestException('Missing phone number');
+      if (!phone) throw new BadRequestException('Missing phone number');
   
       // Check exist customer with phone number
       let customer = await this.customerService.findByPhone(phone);
   
-      if(!customer) {
+      if (!customer) {
         const name = `${groom}/${bride}`;
         customer = await this.customerService.createCustomer(name, phone);
       }
       
-      // valid lobby
-      const lobby:LobbyIncludedLobType = await this.lobbyService.getLobbyById(lobby_id, false);
-      if(!lobby) throw new NotFoundException('Lobby not found')
+      // Validate lobby
+      const lobby: LobbyIncludedLobType = await this.lobbyService.getLobbyById(lobby_id, false);
+      if (!lobby) throw new NotFoundException('Lobby not found');
   
       // Check valid max table number
-      if(table_count > lobby.LobType["max_table_count"]) throw new BadRequestException(`This lobby's max table is ${lobby.LobType["max_table_count"]} - (your order: ${table_count})`)
+      if (table_count > lobby.LobType["max_table_count"]) throw new BadRequestException(`This lobby's max table is ${lobby.LobType["max_table_count"]} - (your order: ${table_count})`);
   
-      // Check valid lobby and date for weeding
+      // Check valid lobby and date for wedding
       const eventOnDate = await this.findEventOnDate(wedding_date);
-      const isValidDate = eventOnDate.some(data => data.shift_id === shift_id)
-      const isSameLob = eventOnDate.some(data => data['lobby_id'] === lobby_id)
   
-      if(isValidDate && isSameLob) throw new ConflictException('This date & shift had a wedding');
+      const isValidDateAndLob = eventOnDate.some(data => data.shift_id === shift_id && data.lobby_id === lobby_id)
+
+      if (isValidDateAndLob) throw new ConflictException('This date & shift had a wedding');
   
       // Create wedding 
       const newWedding = await this.prisma.wedding.create({
@@ -475,10 +552,10 @@ export class WeddingService {
           customer_id: customer.id,
           table_count,
           note,
-        } as WeddingInterface
-      })
+        }
+      });
   
-      return newWedding
+      return newWedding;
     } catch (error) {
       console.log(error);
       throw error;
@@ -529,7 +606,6 @@ export class WeddingService {
         }
       }
 
-
       objectUpdate.customer_id = customer.id;
   
       // valid lobby
@@ -560,22 +636,24 @@ export class WeddingService {
         }
       }
 
-      // Check valid lobby and date for weeding
-      let shift_id = oldWeddingData?.shift_id;
-      if(dataUpdate?.shift_id) {
-        shift_id = dataUpdate?.shift_id;
-        objectUpdate.shift_id = shift_id;
-      }
-
       let wedding_date = oldWeddingData?.wedding_date;
       if(dataUpdate?.wedding_date) {
         wedding_date = new Date(dataUpdate?.wedding_date);
         objectUpdate.wedding_date = wedding_date;
+      }
+      const eventOnDate = await this.findEventOnDate(wedding_date);
 
-        const eventOnDate = await this.findEventOnDate(wedding_date);
-        const isValidDate = eventOnDate.some(data => data.shift_id === shift_id)
-        const isSameLob = eventOnDate.some(data => data['lobby_id'] === lobby_id)
-        if(isValidDate && isSameLob) throw new ConflictException('This date & shift had a wedding');
+      // Check valid shift and date for weeding
+      let shift_id = oldWeddingData?.shift_id;
+
+      if(dataUpdate?.shift_id) {
+        shift_id = dataUpdate?.shift_id;
+        objectUpdate.shift_id = shift_id;
+      }
+      if(dataUpdate?.shift_id || dataUpdate?.wedding_date || dataUpdate?.lobby_id) {
+
+        const isValidDateAndLob = eventOnDate.find(data => data.shift_id === shift_id && data.lobby_id === lobby_id)
+        if(isValidDateAndLob && isValidDateAndLob.id !== weddingID) throw new ConflictException('This date & shift had a wedding');
       }
 
       if(dataUpdate?.note) objectUpdate.note = dataUpdate?.note;
@@ -1087,7 +1165,7 @@ export class WeddingService {
     let extraFee = 0
     if(isPenalty) {
       const payDate = new Date()
-
+      // "Sun Mar 03 2024 13:54:30 GMT+0700 (Indochina Time)"
       const timeDifference = calculateTimeDifference(weddingDate, payDate);
 
       if(timeDifference.days > 0) {

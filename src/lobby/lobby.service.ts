@@ -58,15 +58,16 @@ export class LobbyService {
  /*
   =================== LOBBY TYPE ===================
 */
-  async getLobbyTypes(includeDeletedBool:boolean):Promise<LobType[]> {
+  async getLobbyTypes(includeDeletedBool:boolean, includeLobby:boolean):Promise<LobType[]> {
     try {
-      const queryObject:{ where?: { deleted_at?: any }, orderBy?: any } = {};
+      const queryObject:{ where?: { deleted_at?: any }, orderBy?: any, include?: any } = {};
 
       if(!includeDeletedBool) {
         queryObject.where = { deleted_at: null };
       }
 
       queryObject.orderBy = { created_at: "asc" };
+      if(includeLobby) queryObject.include = { Lobby: true };
 
       const lobbyTypeList: LobType[] = await this.prisma.lobType.findMany(queryObject)
       return lobbyTypeList

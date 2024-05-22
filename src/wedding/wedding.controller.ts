@@ -112,6 +112,16 @@ export class WeddingController {
     return this.weddingService.getServicesOrderByWedding(weddingId);
   }
 
+  @Get('get/food-cart')
+  async getFoodsCartByWedding(@Query('weddingId') weddingId:string) {
+    return this.weddingService.getFoodsCartByWedding(weddingId);
+  }
+
+  @Get('get/service-cart')
+  async getServicesCartByWedding(@Query('weddingId') weddingId:string) {
+    return this.weddingService.getServicesCartByWedding(weddingId);
+  }
+
   @Get('/total-deposit/:weddingId')
   async getCurrentDepositForWedding(@Param('weddingId') weddingId:string) {
     return this.weddingService.getCurrentDepositForWedding(weddingId);

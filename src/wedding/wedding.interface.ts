@@ -1,4 +1,4 @@
-import { Shift } from "@prisma/client";
+import { Bill, Customer, Lobby, Shift } from "@prisma/client";
 
 export interface WeddingInterface {
   id:string;
@@ -10,6 +10,10 @@ export interface WeddingInterface {
   customer_id:string;
   table_count:number;
   note:string;
+  Bill?: Bill[];
+  Shift?: Shift;
+  Customer?: Customer;
+  Lobby?: Lobby;
 }
 export interface WeddingUpdateInterface {
   groom?:string;

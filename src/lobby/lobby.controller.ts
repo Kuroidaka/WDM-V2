@@ -34,10 +34,14 @@ export class LobbyController {
   }
 
   @Get('types') // get lobbies type
-  async getLobbyTypes(@Query('includeDeleted') includeDeleted = 'false'): Promise<LobType[]> {
+  async getLobbyTypes(
+    @Query('includeDeleted') includeDeleted = 'false',
+    @Query('includeLobby') includeLobby = 'false'
+  ): Promise<LobType[]> {
 
     const includeDeletedBool = includeDeleted === 'true';
-    return this.lobbyService.getLobbyTypes(includeDeletedBool);
+    const includeLobbyBool = includeLobby === 'true';
+    return this.lobbyService.getLobbyTypes(includeDeletedBool, includeLobbyBool);
   }
 
   @Get('type/:id') // get lobby type by id
