@@ -117,5 +117,10 @@ export class WeddingController {
     return this.weddingService.getCurrentDepositForWedding(weddingId);
   }
 
+  @Get('/extra_fee/:weddingId')
+  async getExtraFeeForWedding(@Param('weddingId') weddingId:string) {
+    return this.weddingService.getExtraFeeForWedding(weddingId);
+  }
+
 
 }

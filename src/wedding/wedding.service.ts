@@ -1496,4 +1496,35 @@ export class WeddingService {
       throw error;
     }
   }
+  async getExtraFeeForWedding(weddingId:string) {
+    try {
+      let totalPrice = 0
+      const wedding = await this.getWeddingById({id: weddingId});
+
+      const currentState = wedding['is_penalty_mode']
+
+      const order = await this.prisma.wedding.findUnique({
+        where: { id: weddingId, },
+        include: { 
+          Bill: {
+            orderBy: {
+              "created_at": 'desc'
+            }
+          },
+        },
+      })
+      
+      const bill = order.Bill[0]
+      totalPrice = bill.total_price
+
+      const weddingDate = new Date(order.wedding_date)
+      const extraFee = await this.getPenalty(totalPrice, currentState, weddingDate);
+      // calculate remain price
+
+      return extraFee;
+    } catch (error) {
+      console.log(error);
+      throw error;
+    }
+  }
 }
