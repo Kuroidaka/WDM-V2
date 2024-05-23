@@ -48,7 +48,7 @@ export class WeddingService {
     return newDate;
   };
 
- filterByShiftIds = (shiftList:Shift[], weddingList:Wedding[]) => {
+  filterByShiftIds = (shiftList:Shift[], weddingList:Wedding[]) => {
     const shiftIds = shiftList.map(item => item.id);
     return weddingList.filter(item => shiftIds.includes(item.shift_id));
   };
@@ -151,6 +151,15 @@ export class WeddingService {
       console.log(error)
       throw error;
     }
+  }
+  getMainBill(wedding:WeddingInterface) {
+    const Bill = wedding.Bill.reduce((mainBill, currentBill) =>{
+      return mainBill.payment_date < currentBill.payment_date
+        ? currentBill
+        : mainBill
+    }, wedding.Bill[0]);
+
+    return Bill
   }
   // Get Order services + foods
   async getFoodsCartByWedding(wedding_id:string) {
@@ -370,7 +379,7 @@ export class WeddingService {
             ...queryObject.include,
             Bill: {
               orderBy: {
-                  "payment_date": 'desc'
+                  "created_at": 'desc'
               }
             }
         }}
@@ -378,14 +387,6 @@ export class WeddingService {
 
       const weddingData = await this.prisma.wedding.findMany(queryObject);
       const weddingList = weddingData.map(data => {
-        // const Bill = data.Bill.reduce(
-        //   (mainBill, currentBill) =>
-        //     mainBill.payment_date < currentBill.payment_date
-        //       ? currentBill
-        //       : mainBill,
-        //   data.Bill[0]
-        // );
-
         if(data.Bill.length > 0) {
           if(!data.Bill.some(bill => bill['deposit_amount'] > 0)) 
             return {...data, status: "pending"} 
@@ -1664,12 +1665,17 @@ export class WeddingService {
         isForPayment: false
       })
 
+      const deposit = await this.getDeposit(weddingId)
+
+      const depositRequire = deposit * totalPrice / 100
+
       return {
         foodPrice,
         servicePrice,
         totalPrice: extraFee + totalPrice,
         extraFee,
-        remainPrice
+        remainPrice,
+        depositRequire
       }
     } catch (error) {
       console.log(error)
@@ -1681,9 +1687,9 @@ export class WeddingService {
     try {
       await this.prisma.$transaction(async (transaction) => {
         // Delete related records in the correct order
-        await transaction.bill.deleteMany({
-          where: { wedding_id: weddingId },
-        });
+        // await transaction.bill.deleteMany({
+        //   where: { wedding_id: weddingId },
+        // });
         
         await transaction.foodOrder.deleteMany({
           where: { wedding_id: weddingId },

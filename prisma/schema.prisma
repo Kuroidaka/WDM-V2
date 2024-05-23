@@ -9,7 +9,7 @@ datasource db {
 
 model Bill {
   id                  String   @id @default(uuid())
-  wedding_id          String
+  wedding_id          String?
   payment_date        DateTime
   service_total_price Int
   food_total_price    Int
@@ -20,11 +20,10 @@ model Bill {
   extra_fee           Int
   created_at          DateTime @default(now())
   updated_at          DateTime @default(now())
-  Wedding             Wedding  @relation(fields: [wedding_id], references: [id])
+  Wedding             Wedding?  @relation(fields: [wedding_id], references: [id], onDelete: SetNull)
 
   @@index([wedding_id], map: "Bill_wedding_id_fkey")
 }
-
 model Customer {
   id         String    @id @default(uuid())
   name       String
