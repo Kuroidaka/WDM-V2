@@ -7,7 +7,7 @@ import { createWeddingDto } from './dto/create_wedding.dto';
 import { CustomerService } from 'src/customer/customer.service';
 import { LobbyService } from 'src/lobby/lobby.service';
 import { LobbyIncludedLobType } from 'src/lobby/lobby.interface';
-import { WeddingInterface, WeddingUpdateInterface, foodOrderWedding, serviceOrder, serviceOrderWedding } from './wedding.interface';
+import { WeddingIDInterface, WeddingInterface, WeddingUpdateInterface, foodOrderWedding, serviceOrder, serviceOrderWedding } from './wedding.interface';
 import { FoodService } from 'src/food/food.service';
 import { FoodInterFace } from 'src/food/food.interface';
 import { ServiceInterFace } from 'src/service_wedding/service.interface';
@@ -458,7 +458,7 @@ export class WeddingService {
       throw error;
     }
   }
-  async getWeddingById({id, bill}:{id:string, bill?: boolean}) {
+  async getWeddingById({id, bill,}:{id:string, bill?: boolean}) {
     try {
       let queryObject:{
         where: { id:string,},
@@ -479,12 +479,13 @@ export class WeddingService {
               LobType: true
             }
           },
-          Shift: true
+          Shift: true,
+          Bill: true
         }
       }
 
-      if(bill) {
-        queryObject = { ...queryObject, include: {
+      if(bill){
+          queryObject = { ...queryObject, include: {
           ...queryObject.include,
           Bill: {
             orderBy: {
@@ -500,6 +501,29 @@ export class WeddingService {
     } catch (error) {
       console.log(error);
       throw error;
+    }
+  }
+
+  async getWeddingByIdWithStatus(weddingId:string) {
+    try {
+      const wedding:WeddingInterface = await this.getWeddingById({id: weddingId, bill: true})
+      let status = ''
+      if(wedding.Bill.length > 0) {
+        if(!wedding.Bill.some(bill => bill['deposit_amount'] > 0)) 
+          status = "pending"
+        if(wedding.Bill[0]["remain_amount"] <= 0)
+          status= "paid"
+        else {
+          status= "deposit"
+        }
+      }
+      else {
+        status = "pending"
+      } 
+
+      return {status, ...wedding}
+    } catch (error) {
+      console.log(error)
     }
   }
 
@@ -1424,6 +1448,7 @@ export class WeddingService {
         deposit_amount: transactionAmount,
         remain_amount: remainPrice,
         extra_fee: extraFee,
+        payment_date: payment_date
       })
 
 
@@ -1520,7 +1545,8 @@ export class WeddingService {
         deposit_require: deposit,
         deposit_amount: transactionAmount,
         remain_amount: remainPrice,
-        extra_fee: extraFee
+        extra_fee: extraFee,
+        payment_date: payment_date
       })
 
 

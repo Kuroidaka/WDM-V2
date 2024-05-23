@@ -16,6 +16,20 @@ export interface WeddingInterface {
   Customer?: Customer;
   Lobby?: Lobby;
 }
+export interface WeddingIDInterface {
+  id:string;
+  groom:string;
+  bride:string;
+  wedding_date:Date;
+  shift_id:string;
+  lobby_id:string;
+  customer_id:string;
+  table_count:number;
+  note:string;
+  is_penalty_mode?: boolean,
+  Bill?: Bill[];
+
+}
 export interface WeddingUpdateInterface {
   groom?:string;
   bride?:string;

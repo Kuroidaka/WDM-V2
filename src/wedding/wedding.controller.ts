@@ -1,7 +1,7 @@
 import { PageAccess } from 'src/auth/page_access.decorator';
 import { createWeddingDto } from './dto/create_wedding.dto';
 import { WeddingService } from './wedding.service';
-import { Body, Controller, Get, Patch, Post, Query, UseGuards, Param } from '@nestjs/common';
+import { Body, Controller, Get, Patch, Post, Query, UseGuards, Param, Delete } from '@nestjs/common';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
 import { PageGuard } from 'src/auth/page.guard';
 
@@ -31,9 +31,15 @@ export class WeddingController {
   @Get('/:weddingId')
   async getWeddingById(
     @Param('weddingId') weddingId:string,
-    @Query('bill') bill=false
+    @Query('bill') bill="false",
+    @Query('status') status="false"
   ) {
-    return this.weddingService.getWeddingById({id: weddingId, bill});
+
+    const includeBill = bill === 'true';
+    const includeStatus = status === 'true';
+    if (includeStatus) return this.weddingService.getWeddingByIdWithStatus(weddingId);
+    
+    return this.weddingService.getWeddingById({id: weddingId, bill: includeBill});
   }
 
   @Get()
@@ -64,6 +70,10 @@ export class WeddingController {
     @Body('weddingId') weddingId:string
   ) {
     return this.weddingService.editFoodOrderForWedding(weddingId, foods);
+  }
+  @Delete('delete/:weddingId')
+  async deleteWedding(@Param('weddingId') weddingId:string) {
+    return this.weddingService.deleteWedding(weddingId);
   }
 
   @Post('create/wedding/service')
@@ -138,6 +148,5 @@ export class WeddingController {
   async getDataForBillPage(@Param('weddingId') weddingId:string) {
     return this.weddingService.getDataForBillPage(weddingId);
   }
-
 
 }

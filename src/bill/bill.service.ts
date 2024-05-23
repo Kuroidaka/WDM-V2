@@ -77,11 +77,12 @@ export class BillService {
         deposit_amount,
         remain_amount,
         extra_fee,
+        payment_date=new Date()
       } = dataCreate;
       const bill = await this.prisma.bill.create({
         data: {
             wedding_id,
-            payment_date: new Date(),
+            payment_date: payment_date,
             service_total_price,
             food_total_price,
             total_price,

@@ -1,4 +1,4 @@
-import { IsBoolean, IsInt, IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsBoolean, IsInt, IsOptional, IsString, IsNumber, IsDate, IsDateString } from 'class-validator';
 
 export class CreateBillDto {
   
@@ -25,5 +25,9 @@ export class CreateBillDto {
   
   @IsNumber()
   extra_fee:number;
+
+  @IsDateString()
+  @IsOptional()
+  payment_date?:string | Date;
             
 }
