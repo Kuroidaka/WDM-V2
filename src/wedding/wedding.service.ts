@@ -1204,6 +1204,7 @@ export class WeddingService {
   calculateRemainPrice ({
     bills,
     isPenalty,
+    isForPayment=true,
     extraFee,
     totalPrice,
     transactionAmount=0,
@@ -1211,6 +1212,7 @@ export class WeddingService {
     bills:BillInterface[],
     isPenalty:boolean,
     extraFee:number,
+    isForPayment?: boolean,
     totalPrice:number,
     transactionAmount?:number,
   }):{
@@ -1223,7 +1225,8 @@ export class WeddingService {
     if(bills.length > 0) { //deposit before
 
       if(recentBill['remain_amount'] <= 0) {
-        return { remainPrice: null };
+        if(isForPayment) return { remainPrice: null };
+        else return { remainPrice: recentBill['remain_amount'] };
       }
 
       newTotalPrice = recentBill['remain_amount']
@@ -1250,6 +1253,8 @@ export class WeddingService {
       newTotalPrice
     }
   }
+
+  
   async calculateRemainPriceForEdit ({
     bills,
     isPenalty,
@@ -1552,11 +1557,12 @@ export class WeddingService {
       const weddingDate = new Date(order.wedding_date)
       const extraFee = await this.getPenalty(totalPrice, !currentState, weddingDate);
       // calculate remain price
-      const { remainPrice } = this.calculateRemainPrice({
+      const { remainPrice } = await this.calculateRemainPrice({
         bills: order.Bill,
         isPenalty: !currentState,
         extraFee,
         totalPrice,
+        isForPayment: false
       })
 
       const result = await this.prisma.wedding.update({
@@ -1618,11 +1624,12 @@ export class WeddingService {
 
       const extraFee = await this.getExtraFeeForWedding(weddingId)
 
-      const { remainPrice, newTotalPrice } = this.calculateRemainPrice({
+      const { remainPrice } = await this.calculateRemainPrice({
         bills: weddingData.Bill,
         isPenalty: weddingData.is_penalty_mode,
         extraFee,
-        totalPrice
+        totalPrice,
+        isForPayment: false
       })
 
       return {
