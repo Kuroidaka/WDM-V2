@@ -555,6 +555,10 @@ export class WeddingService {
         }
       });
   
+
+      // const result = await this.getWeddingById({id: newWedding.id, bill: true})
+  
+
       return newWedding;
     } catch (error) {
       console.log(error);
@@ -663,8 +667,10 @@ export class WeddingService {
         where: { id: weddingID, },
         data: objectUpdate,
       })
+
+      const result = await this.getWeddingById({id: weddingID, bill: true})
   
-      return updatedWedding
+      return result
     } catch (error) {
       console.log(error);
       throw error;
@@ -1644,4 +1650,36 @@ export class WeddingService {
       throw error
     }
   } 
+
+  async deleteWedding(weddingId: string) {
+    try {
+      await this.prisma.$transaction(async (transaction) => {
+        // Delete related records in the correct order
+        await transaction.bill.deleteMany({
+          where: { wedding_id: weddingId },
+        });
+        
+        await transaction.foodOrder.deleteMany({
+          where: { wedding_id: weddingId },
+        });
+        
+        await transaction.serviceOrder.deleteMany({
+          where: { wedding_id: weddingId },
+        });
+        
+        // Finally, delete the wedding record
+        await transaction.wedding.delete({
+          where: { id: weddingId },
+        });
+      });
+  
+      console.log('Wedding and related records deleted successfully.');
+    } catch (error) {
+      console.error('Error deleting wedding and related records:', error);
+      throw error; // Re-throw the error to handle it in the calling function if needed
+    } finally {
+      await this.prisma.$disconnect();
+    }
+  }
+  
 }
