@@ -65,7 +65,7 @@ export class WeddingService {
         include: {
           Bill: {
             orderBy: {
-              payment_date: 'desc',
+              created_at: 'desc',
             },
           },
           Customer: true,
@@ -86,7 +86,9 @@ export class WeddingService {
             if (isPaid) {
               return { ...data, status: "paid" };
             }
-            return { ...data, status: "deposit" };
+            else {
+              return { ...data, status: "deposit" };
+            }
           }
           return { ...data, status: "pending" };
         }
@@ -119,7 +121,7 @@ export class WeddingService {
         include: {
           Bill: {
             orderBy: {
-              payment_date: 'desc',
+              created_at: 'desc',
             },
           },
           Customer: true,
