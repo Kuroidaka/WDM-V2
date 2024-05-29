@@ -57,7 +57,7 @@ export class WeddingService {
     try{
       const newDate = this.adjustDate(date)
 
-      const weddings = await this.prisma.wedding.findMany({
+      const weddings = await this.prisma.wedding.findMany({ 
         where: {
           wedding_date: newDate,
         },
